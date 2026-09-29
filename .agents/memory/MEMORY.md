@@ -1,1 +1,2 @@
 - [Child-facing narration](child-audio.md) — check provider eligibility for under-13 products; device speech varies by browser and needs captions.
+- [Expo web API routing](expo-web-routing.md) — this workspace’s Expo preview gateway serves /api; web should not depend on a second hostname.
