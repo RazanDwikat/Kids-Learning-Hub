@@ -52,9 +52,23 @@ export const activityRewardConfigs = pgTable("activity_reward_configs", {
   title: text("title").notNull().default(""),
   message: text("message").notNull().default(""),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  migratedAt: timestamp("migrated_at", { withTimezone: true }),
 });
 export const insertActivityRewardConfigSchema = createInsertSchema(activityRewardConfigs);
 export type ActivityRewardConfig = typeof activityRewardConfigs.$inferSelect;
+
+export const activityRewardOptions = pgTable("activity_reward_options", {
+  id: uuid("id").primaryKey(),
+  childId: uuid("child_id").notNull().references(() => learningChildren.id),
+  enabled: boolean("enabled").notNull().default(true),
+  category: text("category").notNull().default("activity"),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  legacyKey: text("legacy_key"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex("activity_reward_options_legacy").on(t.childId, t.legacyKey)]);
+export const insertActivityRewardOptionSchema = createInsertSchema(activityRewardOptions);
+export type ActivityRewardOption = typeof activityRewardOptions.$inferSelect;
 
 export const insertActivitySchema = createInsertSchema(activities);
 export const insertActivityQuestionSchema = createInsertSchema(activityQuestions);

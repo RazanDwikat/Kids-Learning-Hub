@@ -1,3 +1,4 @@
 - [Child-facing narration](child-audio.md) — check provider eligibility for under-13 products; device speech varies by browser and needs captions.
 - [Expo web API routing](expo-web-routing.md) — this workspace’s Expo preview gateway serves /api; web should not depend on a second hostname.
 - [Expo history timing](expo-history.md) — verify first-load Back/Forward; router initialization can overwrite child history markers.
+- [Lesson viewport sizing](lesson-paging.md) — initialize pager height before layout; inspect page rectangles when touch scrolling stalls.

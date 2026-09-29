@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, AppState, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { Animated, AppState, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, Image, useWindowDimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,15 +44,22 @@ function DragItem({ label, apple = false, onDrop }: { label?: string; apple?: bo
   const responder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
     onPanResponderMove: (_, gesture) => { if (Math.abs(gesture.dx) + Math.abs(gesture.dy) > 8) moved.current = true; offset.setValue({ x: gesture.dx, y: gesture.dy }); },
     onPanResponderRelease: (_, gesture) => {
-      if (moved.current && (Math.abs(gesture.dx) > 45 || Math.abs(gesture.dy) > 45)) onDropRef.current();
-      else if (!moved.current) onDropRef.current();
+      // The basket is to the left. A page scroll or a drag in another direction
+      // is not an answer; a stationary tap remains an accessible alternative.
+      if ((!moved.current && Math.abs(gesture.dx) < 8 && Math.abs(gesture.dy) < 8) ||
+          (gesture.dx < -50 && Math.abs(gesture.dy) < 55)) onDropRef.current();
+      moved.current = false;
+      Animated.spring(offset, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
+    },
+    onPanResponderTerminate: () => {
       moved.current = false;
       Animated.spring(offset, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
     },
   })).current;
-  return <Animated.View {...responder.panHandlers} style={[s.dragItem, { transform: offset.getTranslateTransform() }]}>
+  return <Animated.View {...responder.panHandlers} testID="lesson-drag-apple" accessibilityRole="button" accessibilityLabel="Move apple to the left group" style={[s.dragItem, Platform.OS === 'web' && { touchAction: 'none' } as any, { transform: offset.getTranslateTransform() }]}>
     {apple ? <MaterialCommunityIcons name="food-apple" size={37} color={C.coral} /> : <Txt style={s.answerText}>{label}</Txt>}
   </Animated.View>;
 }
@@ -66,6 +73,7 @@ const requestId = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
 });
 
 export default function LittleSprout() {
+  const windowSize = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? Math.max(insets.bottom, 34) : insets.bottom;
@@ -94,7 +102,12 @@ export default function LittleSprout() {
   const [pending, setPending] = useState<PendingAttempt | null>(null);
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const busy = useRef(false);
-  const touchStart = useRef<number | null>(null);
+  const pager = useRef<ScrollView>(null);
+  const pageHeight = useRef(windowSize.height);
+  const [viewportHeight, setViewportHeight] = useState(windowSize.height);
+  const settling = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoring = useRef(false);
+  const chapterRef = useRef(0);
   const position = useRef(0);
   const sceneRef = useRef<string | null>(null);
   const movedRef = useRef(0);
@@ -131,7 +144,6 @@ export default function LittleSprout() {
   const [mediaError, setMediaError] = useState<string | null>(null);
   // Playback position is separate from saved furthest progress (the API only accepts monotonic increases).
   const resumeRef = useRef(0);
-  const navLock = useRef(0);
   const onScenePlayback = (pct: number) => { position.current = Math.max(position.current, Math.round(pct)); setVideoProgress(pct); };
   const onSceneEnded = () => { position.current = 100; setVideoProgress(100); setPlaying(false); };
   const resetMedia = (saved: number) => { resumeRef.current = saved >= 100 ? 0 : saved; setBlocked(false); setMediaError(null); setReplayKey(0); };
@@ -159,7 +171,7 @@ export default function LittleSprout() {
     if (finished) { setScreen('complete'); return; }
     const index = Math.min(state.progress.currentSceneIndex, scenes.length - 1);
     const next = scenes[index];
-    setChapter(index); sceneRef.current = next.id;
+    chapterRef.current = index; setChapter(index); sceneRef.current = next.id;
     const progress = state.progress.scenes.find(p => p.sceneId === next.id);
     position.current = progress?.positionPercent ?? 0;
     movedRef.current = progress?.movedCount ?? 0;
@@ -175,39 +187,62 @@ export default function LittleSprout() {
     } else { setFeedback(null); setScreen(destination); return true; }
   };
   useScreenHistory<Screen>(screen, 'home', historyScreens, go);
-  const changeChapter = (next: number) => { if (busy.current) return; setPlaying(false); void guarded(async () => {
-    await save();
-    if (next < 0) { setPlaying(false); setScreen('intro'); return; }
-    if (pendingNeedsRetry) throw new Error('Retry your saved answer before continuing.');
-    if (!scene || !state) return;
-    if (next > chapter && !state.progress.completedSceneIds.includes(scene.id)) {
-      const result = await advanceMutation.mutateAsync({ sceneId: scene.id });
-      updateState(result.state);
-      if (result.state.progress.lessonCompleted) { setPlaying(false); setScreen('complete'); return; }
-    }
-    if (next >= scenes.length) { setPlaying(false); setScreen('complete'); return; }
-    const target = scenes[next];
-    const saved = (cache.getQueryData<LearningState>(getGetLearningStateQueryKey()) ?? state).progress.scenes.find(p => p.sceneId === target.id);
-    sceneRef.current = target.id; position.current = saved?.positionPercent ?? 0;
-    movedRef.current = saved?.movedCount ?? 0;
-    resetMedia(position.current); setChapter(next); setVideoProgress(resumeRef.current); setPlaying(true); setFeedback(null);
-  }); };
-  const navigateBy = (dir: number) => {
-    if (Date.now() < navLock.current) return;
-    if (dir > 0 && !canNextRef.current) return;
-    if (dir < 0 && chapter === 0) return;
-    navLock.current = Date.now() + 1100;
-    changeChapter(chapter + dir);
+  const snapTo = (index: number, animated = true) => {
+    if (!pageHeight.current) return;
+    restoring.current = true;
+    pager.current?.scrollTo({ y: pageHeight.current * index, animated });
+    // Ignore the scroll events generated by the corrective scroll.
+    setTimeout(() => { restoring.current = false; }, animated ? 420 : 80);
   };
-  const navigateRef = useRef(navigateBy);
-  navigateRef.current = navigateBy;
-  const canNextRef = useRef(false);
   useEffect(() => {
-    if (Platform.OS !== 'web' || screen !== 'lesson' || typeof window === 'undefined') return;
-    const onWheel = (e: WheelEvent) => { if (Math.abs(e.deltaY) > 35) navigateRef.current(e.deltaY > 0 ? 1 : -1); };
-    window.addEventListener('wheel', onWheel, { passive: true });
-    return () => window.removeEventListener('wheel', onWheel);
-  }, [screen]);
+    if (screen !== 'lesson') return;
+    pageHeight.current = windowSize.height;
+    setViewportHeight(windowSize.height);
+    const frame = requestAnimationFrame(() => snapTo(chapterRef.current, false));
+    return () => cancelAnimationFrame(frame);
+  }, [screen, windowSize.height]);
+  const changeChapter = (next: number) => {
+    if (busy.current || !scene || !state || next === chapterRef.current) return;
+    const from = chapterRef.current;
+    const canAdvance = !pendingNeedsRetry && (from < 2 || solved || (from === 2 && moved === scene.operands.b));
+    if (next > from && !canAdvance) { snapTo(from); return; }
+    setPlaying(false);
+    void guarded(async () => {
+      try {
+        await save();
+        if (next > from && !state.progress.completedSceneIds.includes(scene.id)) {
+          const result = await advanceMutation.mutateAsync({ sceneId: scene.id });
+          updateState(result.state);
+          if (result.state.progress.lessonCompleted) { setScreen('complete'); return; }
+        }
+        if (next >= scenes.length) { setScreen('complete'); return; }
+        const target = scenes[next];
+        const saved = (cache.getQueryData<LearningState>(getGetLearningStateQueryKey()) ?? state).progress.scenes.find(p => p.sceneId === target.id);
+        sceneRef.current = target.id; position.current = saved?.positionPercent ?? 0;
+        movedRef.current = saved?.movedCount ?? 0;
+        resetMedia(position.current); chapterRef.current = next; setChapter(next);
+        setVideoProgress(resumeRef.current); setFeedback(null);
+        snapTo(next, false);
+        setPlaying(true);
+      } catch (e) {
+        snapTo(from);
+        throw e;
+      }
+    });
+  };
+  const settlePage = (offset: number) => {
+    if (!pageHeight.current || restoring.current || screen !== 'lesson') return;
+    const from = chapterRef.current;
+    const next = Math.max(0, Math.min(scenes.length, Math.round(offset / pageHeight.current)));
+    if (next === from) return;
+    if (busy.current || Math.abs(next - from) > 1) { snapTo(from); return; }
+    changeChapter(next);
+  };
+  useEffect(() => () => { if (settling.current) clearTimeout(settling.current); }, []);
+  const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === scene?.operands.b));
+  // Do not put locked scenes into the scrollable content at all. A fast touch
+  // fling can travel multiple pages before a settle callback gets to reject it.
+  const lastVisiblePage = Math.min(scenes.length, chapter + (canNext ? 1 : 0));
   const moveApple = () => void guarded(async () => {
     if (!scene || movedRef.current >= 2) return;
     movedRef.current += 1;
@@ -259,42 +294,82 @@ export default function LittleSprout() {
      },
      query.isFetching,
    ));
-  const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === 2));
-  canNextRef.current = canNext && !saving;
-  const isVideo = scene?.type === 'video' && chapter < 2;
   if (screen === 'home' || screen === 'profile' || screen === 'math' || screen === 'grade' || screen === 'parent') return page(<GardenPages key={screen} screen={screen} state={state} go={go} continueLesson={() => state.progress.currentSceneIndex || finished ? enterStory() : go('intro')} />, true);
   if (screen === 'map' || screen === 'practice') return page(<ActivityPages key={screen} kind={screen === 'map' ? 'homework' : 'practice'} lessonComplete={finished} onLesson={() => go('intro')} onHome={() => go('home')} onParent={() => go('parent')} />, true);
-  if (screen === 'lesson' && scene) return <View style={[s.lesson, { backgroundColor: scene.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }]} onTouchStart={e => { touchStart.current = e.nativeEvent.pageY; }} onTouchEnd={e => {
-    if (touchStart.current === null) return;
-    const delta = touchStart.current - e.nativeEvent.pageY; touchStart.current = null;
-    if (delta > 75) navigateBy(1);
-    else if (delta < -75) navigateBy(-1);
+  if (screen === 'lesson' && scene) return <View style={{ flex: 1 }} onLayout={e => {
+    const height = e.nativeEvent.layout.height;
+    if (height && height !== pageHeight.current) {
+      pageHeight.current = height; setViewportHeight(height);
+      // Resume directly at the saved page, not at the first frame of page one.
+      setTimeout(() => snapTo(chapterRef.current, false), 0);
+    }
   }}>
-    <View style={s.lessonTop}><Pressable style={s.back} onPress={() => go('intro')}><Icon name="x" /></Pressable><View style={s.progressDots}>{scenes.map((_, i) => <View key={i} style={[s.progressDot, i <= chapter && { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{chapter + 1} / {scenes.length}</Txt></View>
-    <View style={s.lessonHeading}><Txt style={s.eyebrow}>{isVideo ? 'WATCH & LEARN · ADDITION' : 'YOUR TURN · ADDITION'}</Txt><Txt style={s.lessonTitle}>{scene.title}</Txt>{!isVideo && <Txt style={s.lessonCaption}>{scene.caption}</Txt>}</View>
-    <View style={s.lessonArt}>
-      {isVideo && <StoryScene kind={chapter === 0 ? 'story' : 'groups'} key={scene.id} playing={playing} muted={muted} resumePercent={resumeRef.current} replayKey={replayKey} retryKey={retryKey} blocked={blocked}
+    <ScrollView ref={pager} testID="lesson-pages" style={[{ flex: 1 }, Platform.OS === 'web' && { scrollSnapType: 'y mandatory', overscrollBehaviorY: 'contain', userSelect: 'none', WebkitUserSelect: 'none' } as any]}
+      pagingEnabled showsVerticalScrollIndicator={false} bounces={false} scrollEventThrottle={32}
+      onScroll={e => {
+        if (restoring.current) return;
+        // Silence narration as soon as its page starts moving out of view,
+        // rather than waiting for the snap/save to finish.
+        if (Math.abs(e.nativeEvent.contentOffset.y - chapterRef.current * pageHeight.current) > 2 && playing) setPlaying(false);
+        // Web wheel/trackpad scrolling has no reliable momentum-end event.
+        // Native settles using the drag/momentum end callbacks below instead.
+        if (Platform.OS === 'web') {
+          const offset = e.nativeEvent.contentOffset.y;
+          if (settling.current) clearTimeout(settling.current);
+          settling.current = setTimeout(() => settlePage(offset), 190);
+        }
+      }}
+      onMomentumScrollEnd={e => {
+        if (settling.current) clearTimeout(settling.current);
+        settlePage(e.nativeEvent.contentOffset.y);
+      }}
+      onScrollEndDrag={e => {
+        if (settling.current) clearTimeout(settling.current);
+        const offset = e.nativeEvent.contentOffset.y;
+        settling.current = setTimeout(() => settlePage(offset), 300);
+      }}
+      onContentSizeChange={() => { if (pageHeight.current && !restoring.current) snapTo(chapterRef.current, false); }}
+    >
+    {scenes.map((item, i) => {
+      if (i > lastVisiblePage) return null;
+      const active = i === chapter;
+      const video = item.type === 'video' && i < 2;
+      const itemProgress = state.progress.scenes.find(p => p.sceneId === item.id);
+      const itemMoved = active ? moved : (itemProgress?.movedCount ?? 0);
+      return <View key={item.id} testID={`lesson-page-${i + 1}`} style={[s.lesson, { height: viewportHeight || undefined, flexGrow: 0, flexShrink: 0, backgroundColor: item.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }, Platform.OS === 'web' && { scrollSnapAlign: 'start', scrollSnapStop: 'always' } as any]}>
+     <View style={s.lessonTop}><Pressable style={s.back} onPress={() => go('intro')}><Icon name="x" /></Pressable><View style={s.progressDots}>{scenes.map((_, dot) => <View key={dot} style={[s.progressDot, dot <= i && { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{i + 1} / {scenes.length}</Txt></View>
+     <View style={s.lessonHeading}><Txt style={s.eyebrow}>{video ? 'WATCH & LEARN · ADDITION' : 'YOUR TURN · ADDITION'}</Txt><Txt style={s.lessonTitle}>{item.title}</Txt>{!video && <Txt style={s.lessonCaption}>{item.caption}</Txt>}</View>
+     <View style={s.lessonArt}>
+       {video && active && <StoryScene kind={i === 0 ? 'story' : 'groups'} key={item.id} playing={playing} muted={muted} resumePercent={resumeRef.current} replayKey={replayKey} retryKey={retryKey} blocked={blocked}
         onProgress={onScenePlayback} onEnded={onSceneEnded}
         onBlocked={() => { setPlaying(false); setBlocked(true); }}
         onError={() => { setPlaying(false); setMediaError('The story sound could not play. Check your connection and retry.'); }}
         onRetry={() => { setBlocked(false); setPlaying(true); }} />}
-      {isVideo && mediaError && message(mediaError, () => { setMediaError(null); setBlocked(false); setRetryKey(k => k + 1); setPlaying(true); })}
-      {scene.type === 'drag' && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={scene.operands.a + moved} size={32} /><Txt style={s.operator}>←</Txt><View style={s.apples}>{Array.from({ length: Math.max(0, scene.operands.b - moved) }, (_, i) => <DragItem key={i} apple onDrop={moveApple} />)}</View></View><Txt style={s.lessonCaption}>{moved === scene.operands.b ? `Wonderful! ${scene.operands.a} + ${scene.operands.b} = ${scene.operands.a + scene.operands.b}` : 'Drag an apple left, or tap it!'}</Txt></>}
-      {scene.type === 'choice' && <>{chapter === 3 ? <View style={s.appleRow}><Apples count={scene.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={scene.operands.b} /></View> : <Image source={bunny} resizeMode="contain" style={s.lessonBunny} />}<Txt style={s.equation}>{scene.operands.a} + {scene.operands.b} = ?</Txt>{feedback && (feedback.showApples ? <Hint a={scene.operands.a} b={scene.operands.b} title={feedback.text} /> : <View style={s.hint}><Txt style={s.hintTitle}>{feedback.text}</Txt></View>)}</>}
+       {video && !active && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={item.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={item.operands.b} /></View><Txt style={s.lessonCaption}>{item.caption}</Txt></>}
+       {video && active && mediaError && message(mediaError, () => { setMediaError(null); setBlocked(false); setRetryKey(k => k + 1); setPlaying(true); })}
+       {item.type === 'drag' && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={item.operands.a + itemMoved} size={32} /><Txt style={s.operator}>←</Txt><View style={s.apples}>{Array.from({ length: Math.max(0, item.operands.b - itemMoved) }, (_, appleIndex) => active ? <DragItem key={appleIndex} apple onDrop={moveApple} /> : <MaterialCommunityIcons key={appleIndex} name="food-apple" size={37} color={C.coral} />)}</View></View><Txt style={s.lessonCaption}>{itemMoved === item.operands.b ? `Wonderful! ${item.operands.a} + ${item.operands.b} = ${item.operands.a + item.operands.b}` : 'Drag an apple left, or tap it!'}</Txt></>}
+       {item.type === 'choice' && <>{i === 3 ? <View style={s.appleRow}><Apples count={item.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={item.operands.b} /></View> : <Image source={bunny} resizeMode="contain" style={s.lessonBunny} />}<Txt style={s.equation}>{item.operands.a} + {item.operands.b} = ?</Txt>{active && feedback && (feedback.showApples ? <Hint a={item.operands.a} b={item.operands.b} title={feedback.text} /> : <View style={s.hint}><Txt style={s.hintTitle}>{feedback.text}</Txt></View>)}</>}
     </View>
     <View style={s.lessonBottom}>
-      {scene.type === 'choice' && !solved && <View style={s.choices}>{scene.options.map(n => <Pressable disabled={saving || !!pending && pending.answer !== n} style={s.choice} key={n} onPress={() => submit(n)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
-      {scene.type === 'choice' && !solved && <Button secondary title="Show me how to count" onPress={help} disabled={saving || !!pending} icon="help-circle" />}
-      {solved && <Txt style={s.pill}>✓  Yes! You counted them all.</Txt>}
-      {pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => void guarded(save))}
-      {saving && <Txt style={s.swipeTip}>Saving your learning…</Txt>}
-      <View style={s.controls}>{isVideo && <><Pressable testID="button-play-pause" accessibilityRole="button" accessibilityLabel={playing ? 'Pause story' : 'Play story'} onPress={() => { setBlocked(false); if (playing) { setPlaying(false); if (!busy.current) void guarded(save); } else setPlaying(true); }} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Pressable testID="button-mute" accessibilityRole="button" accessibilityLabel={muted ? 'Turn sound on' : 'Mute sound'} onPress={() => setMuted(m => !m)} style={s.playButton}><Icon name={muted ? 'volume-x' : 'volume-2'} /></Pressable><Pressable testID="button-replay" accessibilityRole="button" accessibilityLabel="Replay story from the start" onPress={() => { setBlocked(false); setReplayKey(k => k + 1); setVideoProgress(0); setPlaying(true); }} style={s.playButton}><Icon name="rotate-ccw" /></Pressable></>}<Button coral title={chapter === scenes.length - 1 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(chapter + 1)} disabled={!canNext || saving} icon="arrow-right" style={{ flex: 1 }} /></View>
-      <Txt style={s.swipeTip}>{canNext ? (isVideo && videoProgress >= 100 ? 'Story finished · swipe up, scroll, or tap Next' : 'Swipe up, scroll, or tap Next · 5 scenes') : 'Try the activity to continue'}</Txt>
-      <View testID="story-progress" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(isVideo ? videoProgress : 100) }} style={s.track}><View style={[s.trackFill, { width: `${isVideo ? videoProgress : 100}%` }]} /></View>{isVideo && <Txt style={[s.swipeTip, { fontSize: 9, marginTop: 4 }]}>Narration uses a synthetic voice.</Txt>}
+       {active && item.type === 'choice' && !solved && <View style={s.choices}>{item.options.map(n => <Pressable testID={`lesson-answer-${n}`} disabled={saving || !!pending && pending.answer !== n} style={s.choice} key={n} onPress={() => submit(n)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
+       {active && item.type === 'choice' && !solved && <Button secondary title="Show me how to count" onPress={help} disabled={saving || !!pending} icon="help-circle" />}
+       {active && solved && <Txt style={s.pill}>✓  Yes! You counted them all.</Txt>}
+       {active && (pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => void guarded(save)))}
+       {active && saving && <Txt style={s.swipeTip}>Saving your learning…</Txt>}
+       {active ? <><View style={s.controls}>{video && <><Pressable testID="button-play-pause" accessibilityRole="button" accessibilityLabel={playing ? 'Pause story' : 'Play story'} onPress={() => { setBlocked(false); if (playing) { setPlaying(false); if (!busy.current) void guarded(save); } else setPlaying(true); }} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Pressable testID="button-mute" accessibilityRole="button" accessibilityLabel={muted ? 'Turn sound on' : 'Mute sound'} onPress={() => setMuted(m => !m)} style={s.playButton}><Icon name={muted ? 'volume-x' : 'volume-2'} /></Pressable><Pressable testID="button-replay" accessibilityRole="button" accessibilityLabel="Replay story from the start" onPress={() => { setBlocked(false); setReplayKey(k => k + 1); setVideoProgress(0); setPlaying(true); }} style={s.playButton}><Icon name="rotate-ccw" /></Pressable></>}<Button coral title={i === scenes.length - 1 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(i + 1)} disabled={!canNext || saving} icon="arrow-right" style={{ flex: 1 }} /></View>
+       <Txt style={s.swipeTip}>{canNext ? (video && videoProgress >= 100 ? 'Story finished · swipe up, scroll, or tap Next' : 'Swipe up, scroll, or tap Next · 5 scenes') : 'Try the activity to continue'}</Txt>
+       <View testID="story-progress" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(video ? videoProgress : 100) }} style={s.track}><View style={[s.trackFill, { width: `${video ? videoProgress : 100}%` }]} /></View>{video && <Txt style={[s.swipeTip, { fontSize: 9, marginTop: 4 }]}>Narration uses a synthetic voice.</Txt>}</> : <Txt style={s.swipeTip}>{itemProgress?.solved || state.progress.completedSceneIds.includes(item.id) ? 'Scene completed' : 'Scroll to explore this scene'}</Txt>}
     </View>
+   </View>;
+    })}
+    {lastVisiblePage === scenes.length && <View testID="lesson-finish-page" style={[s.lesson, { height: viewportHeight || undefined, flexGrow: 0, flexShrink: 0, backgroundColor: scenes[scenes.length - 1].color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }, Platform.OS === 'web' && { scrollSnapAlign: 'start', scrollSnapStop: 'always' } as any]}>
+      <View style={s.lessonTop}><View style={{ width: 42 }} /><View style={s.progressDots}>{scenes.map((_, dot) => <View key={dot} style={[s.progressDot, { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{scenes.length} / {scenes.length}</Txt></View>
+      <View style={[s.lessonArt, { gap: 20 }]}><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><Txt style={[s.lessonTitle, s.center]}>You helped Bunny!</Txt><Apples count={scenes[scenes.length - 1].operands.a + scenes[scenes.length - 1].operands.b} /><Txt style={s.lessonCaption}>Finishing your story…</Txt></View>
+    </View>}
+    </ScrollView>
   </View>;
   if (screen === 'intro') return page(<>{chrome('math', 'ADDITION · LESSON')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'flex-start' }]}>5 LITTLE SCENES</Txt><Txt style={s.hero}>Two apples.{'\n'}<Txt style={{ color: C.coral }}>Then two more!</Txt></Txt><Txt style={s.muted}>Join Bunny in the orchard and put two little groups together.</Txt><View style={s.celebrateArt}><Image source={bunny} style={s.celebrateBunny} resizeMode="contain" /><Txt style={[s.bubble, { position: 'absolute', bottom: 16, left: 16 }]}>2 + 2 = ?</Txt></View><Txt style={[s.pill, { alignSelf: 'flex-start', marginBottom: 15 }]}>Swipe up through 5 scenes · then the story ends</Txt><Button title={finished ? 'See your story' : state.progress.currentSceneIndex ? 'Resume the story' : 'Play the story'} coral icon="play" onPress={enterStory} /><Txt style={s.note}>Two animated story videos, then three activities. Narration uses a synthetic voice.</Txt></>);
-  return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={() => { const first = scenes[0]; const saved = state.progress.scenes.find(p => p.sceneId === first.id); sceneRef.current = first.id; position.current = saved?.positionPercent ?? 0; movedRef.current = saved?.movedCount ?? 0; resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); setChapter(0); setScreen('lesson'); }} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
+  return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={() => { const first = scenes[0]; const saved = state.progress.scenes.find(p => p.sceneId === first.id); sceneRef.current = first.id; position.current = saved?.positionPercent ?? 0; movedRef.current = saved?.movedCount ?? 0; resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); chapterRef.current = 0; setChapter(0); setScreen('lesson'); }} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
 }
 
 const s = StyleSheet.create({
@@ -305,7 +380,7 @@ const s = StyleSheet.create({
   pill: { fontFamily: 'DM Sans Bold', fontSize: 10, color: C.primary, backgroundColor: '#e7f2e9', borderRadius: 30, overflow: 'hidden', paddingHorizontal: 13, paddingVertical: 9, letterSpacing: .3 }, feature: { minHeight: 282, borderRadius: 30, marginTop: 25, padding: 21, overflow: 'hidden', alignItems: 'flex-start' }, featureTitle: { fontFamily: 'Fredoka SemiBold', fontSize: 30, lineHeight: 31, color: C.foreground, marginTop: 13, zIndex: 1 }, featureDetail: { fontFamily: 'DM Sans', fontSize: 12, lineHeight: 18, color: C.foreground, marginTop: 7, width: '53%', zIndex: 1 }, featureBunny: { position: 'absolute', width: '57%', height: '84%', right: -11, bottom: -8 }, featureCta: { marginTop: 'auto', borderRadius: 30, backgroundColor: C.paper, paddingHorizontal: 16, paddingVertical: 11, zIndex: 1 }, featureCtaText: { fontFamily: 'DM Sans Bold', color: C.primary, fontSize: 12 },
   sectionTitle: { fontFamily: 'Fredoka SemiBold', color: C.foreground, fontSize: 23, marginTop: 27, marginBottom: 13 }, tileRow: { flexDirection: 'row', gap: 12 }, tile: { flex: 1, borderRadius: 24, minHeight: 151, padding: 17, justifyContent: 'space-between' }, tileTitle: { fontFamily: 'Fredoka SemiBold', fontSize: 20, lineHeight: 21, color: C.foreground }, curriculum: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: C.paper, padding: 16, borderRadius: 21, borderWidth: 1, borderColor: C.border, marginBottom: 9 }, rowTitle: { fontFamily: 'DM Sans Bold', color: C.foreground, fontSize: 14 },
   nav: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderColor: C.border, backgroundColor: C.paper, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around', paddingTop: 13 }, navItem: { alignItems: 'center', gap: 4, minWidth: 55 }, navLabel: { fontFamily: 'DM Sans Bold', fontSize: 9, color: C.mutedForeground },
-  lesson: { flex: 1, paddingHorizontal: 21 }, lessonTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, progressDots: { flexDirection: 'row', gap: 5 }, progressDot: { width: 21, height: 6, borderRadius: 5, backgroundColor: '#bdd3c5' }, countBadge: { fontFamily: 'DM Sans Bold', color: C.foreground, fontSize: 11, backgroundColor: C.paper, padding: 9, borderRadius: 20 }, lessonHeading: { alignItems: 'center', paddingTop: 15 }, lessonTitle: { fontFamily: 'Fredoka SemiBold', color: C.foreground, fontSize: 35, lineHeight: 38, textAlign: 'center', marginTop: 7 }, lessonCaption: { fontFamily: 'DM Sans', color: C.foreground, fontSize: 13, textAlign: 'center', marginTop: 7, lineHeight: 18 }, lessonArt: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', gap: 8 }, orchard: { width: '100%', height: '80%' }, lessonBunny: { width: '53%', height: '51%' }, bubble: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 22, textAlign: 'center', backgroundColor: C.paper, paddingHorizontal: 17, paddingVertical: 10, borderRadius: 20, overflow: 'hidden' }, appleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }, apples: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', maxWidth: 140 }, operator: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 30 }, equation: { fontFamily: 'Fredoka SemiBold', fontSize: 38, color: C.primary, textAlign: 'center', marginVertical: 8 }, lessonBottom: { gap: 10, alignItems: 'center' }, controls: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 10 }, playButton: { width: 55, height: 55, borderRadius: 17, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }, swipeTip: { fontFamily: 'DM Sans Bold', fontSize: 11, color: C.primary }, track: { height: 5, borderRadius: 8, backgroundColor: '#c7dacb', width: '100%', overflow: 'hidden' }, trackFill: { height: '100%', backgroundColor: C.primary, borderRadius: 8 },
+  lesson: { paddingHorizontal: 21 }, lessonTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, progressDots: { flexDirection: 'row', gap: 5 }, progressDot: { width: 21, height: 6, borderRadius: 5, backgroundColor: '#bdd3c5' }, countBadge: { fontFamily: 'DM Sans Bold', color: C.foreground, fontSize: 11, backgroundColor: C.paper, padding: 9, borderRadius: 20 }, lessonHeading: { alignItems: 'center', paddingTop: 15 }, lessonTitle: { fontFamily: 'Fredoka SemiBold', color: C.foreground, fontSize: 35, lineHeight: 38, textAlign: 'center', marginTop: 7 }, lessonCaption: { fontFamily: 'DM Sans', color: C.foreground, fontSize: 13, textAlign: 'center', marginTop: 7, lineHeight: 18 }, lessonArt: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', gap: 8 }, orchard: { width: '100%', height: '80%' }, lessonBunny: { width: '53%', height: '51%' }, bubble: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 22, textAlign: 'center', backgroundColor: C.paper, paddingHorizontal: 17, paddingVertical: 10, borderRadius: 20, overflow: 'hidden' }, appleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }, apples: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', maxWidth: 140 }, operator: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 30 }, equation: { fontFamily: 'Fredoka SemiBold', fontSize: 38, color: C.primary, textAlign: 'center', marginVertical: 8 }, lessonBottom: { gap: 10, alignItems: 'center' }, controls: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 10 }, playButton: { width: 55, height: 55, borderRadius: 17, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }, swipeTip: { fontFamily: 'DM Sans Bold', fontSize: 11, color: C.primary }, track: { height: 5, borderRadius: 8, backgroundColor: '#c7dacb', width: '100%', overflow: 'hidden' }, trackFill: { height: '100%', backgroundColor: C.primary, borderRadius: 8 },
   choices: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginVertical: 10, minHeight: 60 }, choice: { width: 70, height: 65, borderWidth: 2, borderColor: '#cbdccc', borderRadius: 19, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }, answerText: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 30 }, selectedChoice: { borderColor: C.primary, backgroundColor: '#d9efe2', borderRadius: 19 }, dragItem: { width: 70, height: 65, borderRadius: 19, borderWidth: 2, borderColor: '#cbdccc', backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' }, hint: { backgroundColor: C.paper, padding: 11, borderWidth: 2, borderStyle: 'dashed', borderColor: '#e7b896', borderRadius: 20, alignItems: 'center', width: '100%' }, hintTitle: { fontFamily: 'Fredoka SemiBold', color: '#a45348', fontSize: 16 }, questionPanel: { backgroundColor: C.paper, borderWidth: 1, borderColor: C.border, padding: 19, borderRadius: 27, marginTop: 24, alignItems: 'center', gap: 9 },
   celebrateArt: { backgroundColor: '#dceee1', borderRadius: 36, height: 280, alignItems: 'center', justifyContent: 'center', marginVertical: 23, overflow: 'hidden' }, celebrateBunny: { width: '69%', height: '94%' }, sticker: { position: 'absolute', bottom: 18, right: 23, padding: 13, borderRadius: 40, backgroundColor: C.butter }, metricRow: { flexDirection: 'row', gap: 9, marginVertical: 20 }, metric: { flex: 1, borderRadius: 17, backgroundColor: '#e4f0e7', padding: 12, minHeight: 69 }, metricNumber: { fontFamily: 'Fredoka SemiBold', color: C.foreground, fontSize: 23 }, metricLabel: { fontFamily: 'DM Sans Bold', color: '#62756a', fontSize: 10 }, note: { fontFamily: 'DM Sans', fontSize: 10, color: '#89948b', lineHeight: 15, textAlign: 'center', marginVertical: 17 },
   map: { height: 425, marginTop: 18, backgroundColor: '#dfefdb', borderRadius: 31, borderWidth: 5, borderColor: '#f4f6e8', overflow: 'hidden' }, mapPath: { position: 'absolute', width: '67%', height: '85%', borderWidth: 4, borderColor: '#b2d0af', borderRadius: 200, left: '16%', top: '8%', transform: [{ rotate: '-20deg' }] }, mapStop: { position: 'absolute', width: 76, height: 76, borderRadius: 23, alignItems: 'center', justifyContent: 'center', elevation: 2 }, mapLabel: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 11 }, practiceVisual: { minHeight: 150, justifyContent: 'center', alignItems: 'center', gap: 10 }, dropZone: { fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 22, textAlign: 'center', backgroundColor: '#eef7ed', borderWidth: 2, borderStyle: 'dashed', borderColor: '#bfd6c4', borderRadius: 16, minWidth: '80%', padding: 12, overflow: 'hidden' }, answerInput: { height: 64, borderWidth: 2, borderColor: '#c5d7cb', borderRadius: 19, backgroundColor: C.paper, textAlign: 'center', fontFamily: 'Fredoka SemiBold', color: C.primary, fontSize: 29 },

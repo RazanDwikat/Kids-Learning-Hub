@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
-  db, activities, activityQuestions, activityRuns, activityAttempts, activityRewardConfigs, learningSessions,
+  db, activities, activityQuestions, activityRuns, activityAttempts, activityRewardConfigs, activityRewardOptions, learningSessions,
   learningChildren, learningEnrollments, learningAttempts, learningProgress, learningScenes,
 } from "@workspace/db";
 import {
@@ -12,6 +12,8 @@ import {
   ListTextbooksResponse, ListTextbookPagesParams, ListTextbookPagesResponse,
   StartTextbookHomeworkParams, StartTextbookHomeworkBody, StartTextbookHomeworkResponse,
   GetHomeworkPhotoStatusResponse, GetRewardConfigResponse, SaveRewardConfigBody, SaveRewardConfigResponse,
+  ListRewardOptionsResponse, CreateRewardOptionBody, CreateRewardOptionResponse,
+  UpdateRewardOptionBody, UpdateRewardOptionParams, UpdateRewardOptionResponse, DeleteRewardOptionParams,
 } from "@workspace/api-zod";
 import { additionCatalog, ADDITION_LESSON_ID } from "../lib/learning-curriculum";
 import { ensureActivitiesReady } from "../lib/activity-seed";
@@ -25,7 +27,7 @@ class HttpError extends Error {
 const fail = (status: number, message: string): never => { throw new HttpError(status, message); };
 const child = (res: Response) => res.locals.childId as string;
 
-router.use(["/activities", "/dashboard", "/textbooks", "/homework", "/reward-config"], async (req, res, next): Promise<void> => {
+router.use(["/activities", "/dashboard", "/textbooks", "/homework", "/reward-config", "/reward-options"], async (req, res, next): Promise<void> => {
   await ensureActivitiesReady();
   const auth = req.headers.authorization;
   if (!auth || !/^Bearer [A-Za-z0-9_-]{43}$/.test(auth)) throw new HttpError(401, "Bearer token required");
@@ -75,7 +77,7 @@ async function presentRun(run: typeof activityRuns.$inferSelect, tx: Tx | typeof
     })),
     lastFeedback: last ? { questionId: last.questionId, correct: last.correct, feedback: last.feedback, answer: last.answer } : null,
     source: page ? { bookId: book.id, pageNumber: page.number, lesson: page.lesson } : null,
-    reward: run.completedAt && activity.kind === "exam" ? (run.rewardSnapshot ?? defaultReward) : null,
+    reward: run.completedAt && (activity.kind === "exam" || activity.kind === "homework") ? (run.rewardSnapshot ?? null) : null,
     attemptCount: attempts.length,
   };
 }
@@ -103,6 +105,69 @@ async function rewardConfig(childId: string, tx: Tx | typeof db = db) {
   const [row] = await tx.select().from(activityRewardConfigs).where(eq(activityRewardConfigs.childId, childId));
   return row ? { enabled: row.enabled, category: row.category, title: row.title, message: row.message } : defaultReward;
 }
+const publicOption = (row: typeof activityRewardOptions.$inferSelect) =>
+  ({ id: row.id, enabled: row.enabled, category: row.category, title: row.title, message: row.message });
+async function migrateLegacy(id: string, tx: Tx | typeof db) {
+  const [legacy] = await tx.select().from(activityRewardConfigs).where(eq(activityRewardConfigs.childId, id));
+  if (!legacy || legacy.migratedAt) return;
+  if (legacy.enabled && legacy.title.trim() && legacy.message.trim()) {
+    await tx.insert(activityRewardOptions).values({
+      id: randomUUID(), childId: id, legacyKey: "single", enabled: true,
+      category: legacy.category, title: legacy.title, message: legacy.message,
+    }).onConflictDoNothing();
+  }
+  await tx.update(activityRewardConfigs).set({ migratedAt: new Date() }).where(eq(activityRewardConfigs.childId, id));
+}
+async function chooseReward(id: string, tx: Tx) {
+  await migrateLegacy(id, tx);
+  // The choice and the completed run snapshot are committed in the same transaction.
+  const [chosen] = await tx.select().from(activityRewardOptions).where(and(
+    eq(activityRewardOptions.childId, id), eq(activityRewardOptions.enabled, true)))
+    .orderBy(sql`random()`).limit(1);
+  return chosen ? { enabled: true, category: chosen.category, title: chosen.title, message: chosen.message } : null;
+}
+function optionInput(body: unknown) {
+  const parsed = CreateRewardOptionBody.safeParse(body);
+  if (!parsed.success) return fail(400, "Reward title and message must not be empty");
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+    Object.keys(body).some(k => !["enabled", "category", "title", "message"].includes(k)) ||
+    !parsed.data.title.trim() || !parsed.data.message.trim()) return fail(400, "Reward title and message must not be empty");
+  return { ...parsed.data, category: parsed.data.category ?? "activity",
+    title: parsed.data.title.trim(), message: parsed.data.message.trim() };
+}
+router.get("/reward-options", async (_req, res): Promise<void> => {
+  const id = child(res);
+  const rows = await db.transaction(async tx => {
+    await tx.execute(sql`SELECT id FROM learning_children WHERE id = ${id} FOR UPDATE`);
+    await migrateLegacy(id, tx);
+    return tx.select().from(activityRewardOptions).where(eq(activityRewardOptions.childId, id)).orderBy(asc(activityRewardOptions.createdAt), asc(activityRewardOptions.id));
+  });
+  res.json(ListRewardOptionsResponse.parse(rows.map(publicOption)));
+});
+router.post("/reward-options", async (req, res): Promise<void> => {
+  const value = optionInput(req.body);
+  const id = child(res);
+  const [row] = await db.insert(activityRewardOptions).values({ id: randomUUID(), childId: id, ...value }).returning();
+  res.status(201).json(CreateRewardOptionResponse.parse(publicOption(row)));
+});
+router.patch("/reward-options/:rewardId", async (req, res): Promise<void> => {
+  const params = UpdateRewardOptionParams.safeParse(req.params);
+  if (!params.success) return fail(400, "Invalid reward ID");
+  if (!UpdateRewardOptionBody.safeParse(req.body).success) fail(400, "Invalid reward option");
+  const value = optionInput(req.body);
+  const [row] = await db.update(activityRewardOptions).set(value).where(and(
+    eq(activityRewardOptions.id, params.data.rewardId), eq(activityRewardOptions.childId, child(res)))).returning();
+  if (!row) fail(404, "Reward not found");
+  res.json(UpdateRewardOptionResponse.parse(publicOption(row)));
+});
+router.delete("/reward-options/:rewardId", async (req, res): Promise<void> => {
+  const params = DeleteRewardOptionParams.safeParse(req.params);
+  if (!params.success) return fail(400, "Invalid reward ID");
+  const [row] = await db.delete(activityRewardOptions).where(and(
+    eq(activityRewardOptions.id, params.data.rewardId), eq(activityRewardOptions.childId, child(res)))).returning();
+  if (!row) fail(404, "Reward not found");
+  res.sendStatus(204);
+});
 router.get("/reward-config", async (_req, res): Promise<void> => {
   res.json(GetRewardConfigResponse.parse(await rewardConfig(child(res))));
 });
@@ -110,10 +175,22 @@ router.put("/reward-config", async (req, res): Promise<void> => {
   const body = SaveRewardConfigBody.safeParse(req.body);
   if (!body.success || Object.keys(req.body).some(k => !["enabled", "category", "title", "message"].includes(k)))
     fail(400, "Invalid reward configuration");
-  const value = body.data;
+  const value = body.data!;
   await db.insert(activityRewardConfigs).values({ childId: child(res), ...value }).onConflictDoUpdate({
-    target: activityRewardConfigs.childId, set: { ...value, updatedAt: new Date() },
+    target: activityRewardConfigs.childId, set: { ...value, migratedAt: new Date(), updatedAt: new Date() },
   });
+  // The old single-setting endpoint remains usable without duplicating the migrated option.
+  if (value.title.trim() && value.message.trim()) {
+    await db.insert(activityRewardOptions).values({
+      id: randomUUID(), childId: child(res), legacyKey: "single", ...value,
+    }).onConflictDoUpdate({
+      target: [activityRewardOptions.childId, activityRewardOptions.legacyKey],
+      set: { enabled: value.enabled, category: value.category, title: value.title, message: value.message },
+    });
+  } else {
+    await db.update(activityRewardOptions).set({ enabled: false }).where(and(
+      eq(activityRewardOptions.childId, child(res)), eq(activityRewardOptions.legacyKey, "single")));
+  }
   res.json(SaveRewardConfigResponse.parse(value));
 });
 
@@ -203,8 +280,10 @@ router.post("/activities/runs/:runId/attempts", async (req, res): Promise<void> 
   const id = child(res);
   const result = await db.transaction(async tx => {
     // One row lock serializes retries and completion; ownership is checked first.
+    await ownedRun(runId, id, tx);
+    await tx.execute(sql`SELECT id FROM activity_runs WHERE id = ${runId} FOR UPDATE`);
+    // READ COMMITTED takes a fresh snapshot after waiting on the lock.
     const run = await ownedRun(runId, id, tx);
-    await tx.execute(sql`SELECT id FROM activity_runs WHERE id = ${run.id} FOR UPDATE`);
     const [retry] = await tx.select().from(activityAttempts).where(and(eq(activityAttempts.childId, id), eq(activityAttempts.requestId, requestId)));
     if (retry) {
       if (retry.runId !== run.id || retry.questionId !== questionId || JSON.stringify(retry.answer) !== JSON.stringify(answer))
@@ -233,7 +312,9 @@ router.post("/activities/runs/:runId/attempts", async (req, res): Promise<void> 
       await tx.update(activityRuns).set({
         currentIndex: run.currentIndex + 1,
         correctCount: run.correctCount + Number(correct),
-        ...(completed ? { completedAt: new Date(), ...(activity?.kind === "exam" ? { rewardSnapshot: await rewardConfig(id, tx) } : {}) } : {}),
+        ...(completed ? { completedAt: new Date(), ...((activity?.kind === "exam" || activity?.kind === "homework") ? {
+          rewardSnapshot: await chooseReward(id, tx),
+        } : {}) } : {}),
       }).where(eq(activityRuns.id, run.id));
     }
     return { correct, feedback, run: await presentRun(await ownedRun(run.id, id, tx), tx) };
@@ -288,7 +369,7 @@ router.get("/dashboard", async (_req, res): Promise<void> => {
     totalAttempts: attempts.length + sceneAttempts.length,
     strengths: [...concept].filter(([, t]) => t.correct > 0 && t.correct / t.total >= 0.8).map(([name]) => name),
     needsPractice: [...concept].filter(([, t]) => t.correct / t.total < 0.8).map(([name]) => name),
-    streakDays, rewards: runs.filter(r => r.completedAt).length,
+    streakDays, rewards: runs.filter(r => r.completedAt && (r.rewardSnapshot as { enabled?: boolean } | null)?.enabled).length,
   }));
 });
 

@@ -37,6 +37,8 @@ import type {
   NotFoundResponse,
   RewardConfig,
   RewardConfigInput,
+  RewardOption,
+  RewardOptionInput,
   SubmitLearningSceneAttempt200,
   SubmitLearningSceneAttemptBody,
   Textbook,
@@ -590,6 +592,310 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSaveRewardConfigMutationOptions(options));
+    }
+
+export const getListRewardOptionsUrl = () => {
+
+
+
+
+  return `/api/reward-options`
+}
+
+export const listRewardOptions = async ( options?: Parameters<typeof customFetch>[1]): Promise<RewardOption[]> => {
+
+  return customFetch<RewardOption[]>(getListRewardOptionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRewardOptionsQueryKey = () => {
+    return [
+    `/api/reward-options`
+    ] as const;
+    }
+
+
+export const getListRewardOptionsQueryOptions = <TData = Awaited<ReturnType<typeof listRewardOptions>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRewardOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRewardOptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRewardOptions>>> = ({ signal }) => listRewardOptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRewardOptions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRewardOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof listRewardOptions>>>
+export type ListRewardOptionsQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useListRewardOptions<TData = Awaited<ReturnType<typeof listRewardOptions>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRewardOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRewardOptionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateRewardOptionUrl = () => {
+
+
+
+
+  return `/api/reward-options`
+}
+
+export const createRewardOption = async (rewardOptionInput: RewardOptionInput, options?: Parameters<typeof customFetch>[1]): Promise<RewardOption> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RewardOption>(getCreateRewardOptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rewardOptionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateRewardOptionMutationKey = () => ['createRewardOption'] as const;
+
+export const getCreateRewardOptionMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRewardOption>>, TError,CreateRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRewardOption>>, TError,CreateRewardOptionMutationVariables, TContext> => {
+
+const mutationKey = getCreateRewardOptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRewardOption>>, CreateRewardOptionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRewardOption(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRewardOptionMutationResult = NonNullable<Awaited<ReturnType<typeof createRewardOption>>>
+    export type CreateRewardOptionMutationBody = BodyType<RewardOptionInput>
+    export type CreateRewardOptionMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+    export type CreateRewardOptionMutationVariables = {data: BodyType<RewardOptionInput>}
+
+    export const useCreateRewardOption = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRewardOption>>, TError,CreateRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createRewardOption>>,
+        TError,
+        CreateRewardOptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRewardOptionMutationOptions(options));
+    }
+
+export const getUpdateRewardOptionUrl = (rewardId: string,) => {
+
+
+
+
+  return `/api/reward-options/${rewardId}`
+}
+
+export const updateRewardOption = async (rewardId: string,
+    rewardOptionInput: RewardOptionInput, options?: Parameters<typeof customFetch>[1]): Promise<RewardOption> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RewardOption>(getUpdateRewardOptionUrl(rewardId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rewardOptionInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateRewardOptionMutationKey = () => ['updateRewardOption'] as const;
+
+export const getUpdateRewardOptionMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRewardOption>>, TError,UpdateRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRewardOption>>, TError,UpdateRewardOptionMutationVariables, TContext> => {
+
+const mutationKey = getUpdateRewardOptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRewardOption>>, UpdateRewardOptionMutationVariables> = (props) => {
+          const {rewardId,data} = props ?? {};
+
+          return  updateRewardOption(rewardId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRewardOptionMutationResult = NonNullable<Awaited<ReturnType<typeof updateRewardOption>>>
+    export type UpdateRewardOptionMutationBody = BodyType<RewardOptionInput>
+    export type UpdateRewardOptionMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>
+    export type UpdateRewardOptionMutationVariables = {rewardId: string;data: BodyType<RewardOptionInput>}
+
+    export const useUpdateRewardOption = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRewardOption>>, TError,UpdateRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRewardOption>>,
+        TError,
+        UpdateRewardOptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateRewardOptionMutationOptions(options));
+    }
+
+export const getDeleteRewardOptionUrl = (rewardId: string,) => {
+
+
+
+
+  return `/api/reward-options/${rewardId}`
+}
+
+export const deleteRewardOption = async (rewardId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteRewardOptionUrl(rewardId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteRewardOptionMutationKey = () => ['deleteRewardOption'] as const;
+
+export const getDeleteRewardOptionMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRewardOption>>, TError,DeleteRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteRewardOption>>, TError,DeleteRewardOptionMutationVariables, TContext> => {
+
+const mutationKey = getDeleteRewardOptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteRewardOption>>, DeleteRewardOptionMutationVariables> = (props) => {
+          const {rewardId} = props ?? {};
+
+          return  deleteRewardOption(rewardId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteRewardOptionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteRewardOption>>>
+
+    export type DeleteRewardOptionMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+    export type DeleteRewardOptionMutationVariables = {rewardId: string}
+
+    export const useDeleteRewardOption = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRewardOption>>, TError,DeleteRewardOptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteRewardOption>>,
+        TError,
+        DeleteRewardOptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteRewardOptionMutationOptions(options));
     }
 
 export const getGetActivityCatalogUrl = () => {

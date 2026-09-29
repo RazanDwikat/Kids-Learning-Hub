@@ -147,6 +147,71 @@ export const SaveRewardConfigResponse = zod.object({
 })
 
 
+export const ListRewardOptionsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string(),
+  "message": zod.string()
+})
+export const ListRewardOptionsResponse = zod.array(ListRewardOptionsResponseItem)
+
+
+export const createRewardOptionBodyTitleMax = 100;
+
+export const createRewardOptionBodyMessageMax = 300;
+
+
+
+export const CreateRewardOptionBody = zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']).optional(),
+  "title": zod.string().min(1).max(createRewardOptionBodyTitleMax),
+  "message": zod.string().min(1).max(createRewardOptionBodyMessageMax)
+})
+
+export const CreateRewardOptionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string(),
+  "message": zod.string()
+})
+
+
+export const UpdateRewardOptionParams = zod.object({
+  "rewardId": zod.coerce.string().uuid()
+})
+
+export const updateRewardOptionBodyTitleMax = 100;
+
+export const updateRewardOptionBodyMessageMax = 300;
+
+
+
+export const UpdateRewardOptionBody = zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']).optional(),
+  "title": zod.string().min(1).max(updateRewardOptionBodyTitleMax),
+  "message": zod.string().min(1).max(updateRewardOptionBodyMessageMax)
+})
+
+export const UpdateRewardOptionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string(),
+  "message": zod.string()
+})
+
+
+export const DeleteRewardOptionParams = zod.object({
+  "rewardId": zod.coerce.string().uuid()
+})
+
+export const DeleteRewardOptionResponse = zod.void()
+
+
 export const GetActivityCatalogResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),

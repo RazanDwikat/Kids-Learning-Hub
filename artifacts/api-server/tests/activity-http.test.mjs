@@ -68,7 +68,7 @@ test("child-owned activities persist every answer, deduplicate retries and award
     { requestId: randomUUID(), questionId: run.questions[4].id, answer: { value: "7" } })).status, 409);
   const dashboard = await call("/dashboard", "GET", token);
   assert.equal(dashboard.status, 200);
-  assert.equal(dashboard.data.rewards, 1);
+  assert.equal(dashboard.data.rewards, 0, "without enabled options no reward is promised");
   assert.equal(dashboard.data.totalAttempts, 6);
   assert.equal(dashboard.data.activities.find(a => a.kind === "homework").completedRuns, 1);
   assert.equal((await call("/dashboard", "GET", second.data.token)).data.rewards, 0);

@@ -51,6 +51,49 @@ export interface RewardConfigInput {
 
 export type RewardConfig = RewardConfigInput;
 
+export type RewardOptionInputCategory = typeof RewardOptionInputCategory[keyof typeof RewardOptionInputCategory];
+
+
+export const RewardOptionInputCategory = {
+  activity: 'activity',
+  snack: 'snack',
+  screen_time: 'screen_time',
+  other: 'other',
+} as const;
+
+export interface RewardOptionInput {
+  enabled: boolean;
+  category?: RewardOptionInputCategory;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  message: string;
+}
+
+export type RewardOptionCategory = typeof RewardOptionCategory[keyof typeof RewardOptionCategory];
+
+
+export const RewardOptionCategory = {
+  activity: 'activity',
+  snack: 'snack',
+  screen_time: 'screen_time',
+  other: 'other',
+} as const;
+
+export interface RewardOption {
+  id: string;
+  enabled: boolean;
+  category: RewardOptionCategory;
+  title: string;
+  message: string;
+}
+
 export interface ActivitySource {
   bookId: string;
   pageNumber: number;

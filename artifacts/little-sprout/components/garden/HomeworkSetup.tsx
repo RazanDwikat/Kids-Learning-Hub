@@ -17,10 +17,8 @@ const printedQuestions: Record<number, string[]> = {
 export function HomeworkSetup({ onRun }: { onRun: (id: string) => void }) {
   const books = useListTextbooks();
   const catalog = useGetActivityCatalog();
-  const [path, setPath] = useState<'textbook' | 'scan' | null>(null);
-  const [grade, setGrade] = useState('');
-  const [subject, setSubject] = useState('');
-  const [book, setBook] = useState('');
+  const [path, setPath] = useState<'textbook' | 'scan'>('textbook');
+  const book = books.data?.find(b => b.title === 'Grade 1 Math Example Book')?.id ?? '';
   const [page, setPage] = useState<number | null>(null);
   const pages = useListTextbookPages(book, { query: { queryKey: getListTextbookPagesQueryKey(book), enabled: !!book } });
   const start = useStartTextbookHomework();
@@ -46,10 +44,8 @@ export function HomeworkSetup({ onRun }: { onRun: (id: string) => void }) {
     {catalog.data?.filter(a => a.kind === 'homework' && a.activeRunId).map(a => <Card key={a.id}><T>{a.title}</T><Action testID={`continue-homework-${a.id}`} title="Continue adventure" onPress={() => onRun(a.activeRunId!)} /></Card>)}
     {path === 'scan' && <ScanHomework />}
     {path === 'textbook' && (books.isPending ? <Loading /> : books.isError ? <Failure retry={() => void books.refetch()} /> : <Card><Heading>Find your page</Heading>
-      <T style={s.eyebrow}>1 · GRADE</T><View style={s.row}>{[...new Set(books.data.map(b => b.grade))].map(v => <Action key={v} testID={`homework-grade-${v}`} title={/grade/i.test(v) ? v : `Grade ${v}`} secondary={grade !== v} disabled={start.isPending} onPress={() => { setGrade(v); setSubject(''); setBook(''); setPage(null); }} />)}</View>
-      {!!grade && <><T style={s.eyebrow}>2 · SUBJECT</T><View style={s.row}>{[...new Set(books.data.filter(b => b.grade === grade).map(b => b.subject))].map(v => <Action key={v} testID={`homework-subject-${v}`} title={v} secondary={subject !== v} disabled={start.isPending} onPress={() => { setSubject(v); setBook(''); setPage(null); }} />)}</View></>}
-      {!!subject && <><T style={s.eyebrow}>3 · BOOK</T>{books.data.filter(b => b.grade === grade && b.subject === subject).map(b => <Action key={b.id} testID={`homework-book-${b.id}`} title={b.title} secondary={book !== b.id} disabled={start.isPending} onPress={() => { setBook(b.id); setPage(null); }} />)}</>}
-      {!!book && <><T style={s.eyebrow}>4 · PRINTED PAGE NUMBER</T>{pages.isPending ? <Loading /> : pages.isError ? <Failure retry={() => void pages.refetch()} /> : <View style={s.row}>{pages.data?.map(p => <Action key={p.number} testID={`homework-page-${p.number}`} title={`${p.number}`} secondary={page !== p.number} disabled={start.isPending} onPress={() => setPage(p.number)} />)}</View>}<T style={s.muted}>Only pages in this book are listed. Worked examples and the answer key do not create homework.</T></>}
+      <T style={s.muted}>Grade 1 · Math · Grade 1 Math Example Book</T>
+      {!!book ? <><T style={s.eyebrow}>PRINTED PAGE NUMBER</T>{pages.isPending ? <Loading /> : pages.isError ? <Failure retry={() => void pages.refetch()} /> : <View style={s.row}>{pages.data?.map(p => <Action key={p.number} testID={`homework-page-${p.number}`} title={`${p.number}`} secondary={page !== p.number} disabled={start.isPending} onPress={() => setPage(p.number)} />)}</View>}<T style={s.muted}>Only pages in this book are listed. Worked examples and the answer key do not create homework.</T></> : <T accessibilityRole="alert">The Grade 1 Math Example Book is unavailable. Try again later.</T>}
       {selected && <><Heading>{selected.title}</Heading><T style={s.muted}>{selected.lesson} · {selected.exerciseCount} questions</T>{selected.activityId ? <><T>Review the questions with your grown-up.</T>{books.data.find(b => b.id === book)?.title === 'Grade 1 Math Example Book' && printedQuestions[selected.number]?.map((prompt, i) => <T key={i} testID={`homework-preview-${i + 1}`}>{i + 1}. {prompt}</T>)}<Action testID="start-textbook-homework" title={start.isPending ? 'Opening…' : activity?.activeRunId ? 'Continue this homework' : 'Start this homework'} disabled={start.isPending} onPress={() => void begin()} /></> : <T>This page has no written homework questions. Choose page 4, 5, 7 or 8 to begin.</T>}</>}
       {!!error && <T accessibilityRole="alert">{error} Your page selection is kept. Tap start to retry.</T>}
       {!books.data.length && <T>No textbooks are available yet. Please check again later.</T>}
