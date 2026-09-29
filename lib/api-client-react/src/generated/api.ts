@@ -20,7 +20,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityAttemptInput,
+  ActivityAttemptResult,
+  ActivityRun,
+  ActivityStart,
+  ActivitySummary,
   BadRequestResponse,
+  ChildDashboard,
   ConflictResponse,
   CreateLearningSession201,
   HealthStatus,
@@ -60,6 +66,385 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetActivityCatalogUrl = () => {
+
+
+
+
+  return `/api/activities`
+}
+
+export const getActivityCatalog = async ( options?: Parameters<typeof customFetch>[1]): Promise<ActivitySummary[]> => {
+
+  return customFetch<ActivitySummary[]>(getGetActivityCatalogUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetActivityCatalogQueryKey = () => {
+    return [
+    `/api/activities`
+    ] as const;
+    }
+
+
+export const getGetActivityCatalogQueryOptions = <TData = Awaited<ReturnType<typeof getActivityCatalog>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityCatalog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActivityCatalogQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActivityCatalog>>> = ({ signal }) => getActivityCatalog({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActivityCatalog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetActivityCatalogQueryResult = NonNullable<Awaited<ReturnType<typeof getActivityCatalog>>>
+export type GetActivityCatalogQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useGetActivityCatalog<TData = Awaited<ReturnType<typeof getActivityCatalog>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityCatalog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetActivityCatalogQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartActivityRunUrl = (activityId: string,) => {
+
+
+
+
+  return `/api/activities/${activityId}/runs`
+}
+
+export const startActivityRun = async (activityId: string,
+    activityStart: ActivityStart, options?: Parameters<typeof customFetch>[1]): Promise<ActivityRun> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ActivityRun>(getStartActivityRunUrl(activityId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(activityStart)
+  }
+);}
+
+
+
+
+
+export const getStartActivityRunMutationKey = () => ['startActivityRun'] as const;
+
+export const getStartActivityRunMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startActivityRun>>, TError,StartActivityRunMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startActivityRun>>, TError,StartActivityRunMutationVariables, TContext> => {
+
+const mutationKey = getStartActivityRunMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startActivityRun>>, StartActivityRunMutationVariables> = (props) => {
+          const {activityId,data} = props ?? {};
+
+          return  startActivityRun(activityId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartActivityRunMutationResult = NonNullable<Awaited<ReturnType<typeof startActivityRun>>>
+    export type StartActivityRunMutationBody = BodyType<ActivityStart>
+    export type StartActivityRunMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>
+    export type StartActivityRunMutationVariables = {activityId: string;data: BodyType<ActivityStart>}
+
+    export const useStartActivityRun = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startActivityRun>>, TError,StartActivityRunMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startActivityRun>>,
+        TError,
+        StartActivityRunMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStartActivityRunMutationOptions(options));
+    }
+
+export const getGetActivityRunUrl = (runId: string,) => {
+
+
+
+
+  return `/api/activities/runs/${runId}`
+}
+
+export const getActivityRun = async (runId: string, options?: Parameters<typeof customFetch>[1]): Promise<ActivityRun> => {
+
+  return customFetch<ActivityRun>(getGetActivityRunUrl(runId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetActivityRunQueryKey = (runId: string,) => {
+    return [
+    `/api/activities/runs/${runId}`
+    ] as const;
+    }
+
+
+export const getGetActivityRunQueryOptions = <TData = Awaited<ReturnType<typeof getActivityRun>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActivityRunQueryKey(runId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActivityRun>>> = ({ signal }) => getActivityRun(runId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: runId !== null && runId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActivityRun>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetActivityRunQueryResult = NonNullable<Awaited<ReturnType<typeof getActivityRun>>>
+export type GetActivityRunQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+
+export function useGetActivityRun<TData = Awaited<ReturnType<typeof getActivityRun>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetActivityRunQueryOptions(runId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitActivityAttemptUrl = (runId: string,) => {
+
+
+
+
+  return `/api/activities/runs/${runId}/attempts`
+}
+
+export const submitActivityAttempt = async (runId: string,
+    activityAttemptInput: ActivityAttemptInput, options?: Parameters<typeof customFetch>[1]): Promise<ActivityAttemptResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ActivityAttemptResult>(getSubmitActivityAttemptUrl(runId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(activityAttemptInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitActivityAttemptMutationKey = () => ['submitActivityAttempt'] as const;
+
+export const getSubmitActivityAttemptMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext> => {
+
+const mutationKey = getSubmitActivityAttemptMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitActivityAttempt>>, SubmitActivityAttemptMutationVariables> = (props) => {
+          const {runId,data} = props ?? {};
+
+          return  submitActivityAttempt(runId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitActivityAttemptMutationResult = NonNullable<Awaited<ReturnType<typeof submitActivityAttempt>>>
+    export type SubmitActivityAttemptMutationBody = BodyType<ActivityAttemptInput>
+    export type SubmitActivityAttemptMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>
+    export type SubmitActivityAttemptMutationVariables = {runId: string;data: BodyType<ActivityAttemptInput>}
+
+    export const useSubmitActivityAttempt = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitActivityAttempt>>,
+        TError,
+        SubmitActivityAttemptMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitActivityAttemptMutationOptions(options));
+    }
+
+export const getGetChildDashboardUrl = () => {
+
+
+
+
+  return `/api/dashboard`
+}
+
+export const getChildDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChildDashboard> => {
+
+  return customFetch<ChildDashboard>(getGetChildDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetChildDashboardQueryKey = () => {
+    return [
+    `/api/dashboard`
+    ] as const;
+    }
+
+
+export const getGetChildDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getChildDashboard>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChildDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChildDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildDashboard>>> = ({ signal }) => getChildDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChildDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetChildDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getChildDashboard>>>
+export type GetChildDashboardQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useGetChildDashboard<TData = Awaited<ReturnType<typeof getChildDashboard>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChildDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetChildDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getCreateLearningSessionUrl = () => {
 

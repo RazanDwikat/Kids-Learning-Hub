@@ -8,12 +8,16 @@ import { getGetLearningStateQueryKey, getLearningState, useGetLearningState, use
 import type { LearningState } from '@workspace/api-client-react';
 import { PENDING_KEY, useLearningSession } from '@/hooks/useLearningSession';
 import { isNetworkError, learningRequestError, withRequestTimeout } from '@/hooks/learningNetwork';
+import { useScreenHistory } from '@/hooks/useScreenHistory';
 import colors from '@/constants/colors';
 import { StoryScene } from '@/components/StoryScene';
+import { GardenPages } from '@/components/garden/GardenPages';
+import { ActivityPages } from '@/components/garden/ActivityPages';
 
 const C = colors.light;
 const bunny = require('../../assets/images/sprout-bunny.png');
-type Screen = 'home' | 'profile' | 'math' | 'intro' | 'lesson' | 'complete' | 'map' | 'practice' | 'parent';
+type Screen = 'home' | 'profile' | 'math' | 'grade' | 'intro' | 'lesson' | 'complete' | 'map' | 'practice' | 'parent';
+const historyScreens: readonly Screen[] = ['home', 'profile', 'math', 'grade', 'intro', 'lesson', 'complete', 'map', 'practice', 'parent'];
 type IconName = React.ComponentProps<typeof Feather>['name'];
 function Txt({ children, style, ...props }: React.ComponentProps<typeof Text>) {
   return <Text {...props} style={[s.body, style]}>{children}</Text>;
@@ -161,14 +165,16 @@ export default function LittleSprout() {
     movedRef.current = progress?.movedCount ?? 0;
     resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); setScreen('lesson');
   };
-  const go = (destination: Screen) => {
-    if (busy.current) return;
-    if (destination === 'map' || destination === 'practice' || destination === 'parent') { setNotice('Coming soon'); return; }
+  const go = async (destination: Screen): Promise<boolean> => {
+    if (busy.current) return false;
     if (screen === 'lesson' && destination !== 'lesson') {
       setPlaying(false);
-      void guarded(async () => { await save(); setPlaying(false); setFeedback(null); setScreen(destination); });
-    } else { setFeedback(null); setScreen(destination); }
+      let navigated = false;
+      await guarded(async () => { await save(); setPlaying(false); setFeedback(null); setScreen(destination); navigated = true; });
+      return navigated;
+    } else { setFeedback(null); setScreen(destination); return true; }
   };
+  useScreenHistory<Screen>(screen, 'home', historyScreens, go);
   const changeChapter = (next: number) => { if (busy.current) return; setPlaying(false); void guarded(async () => {
     await save();
     if (next < 0) { setPlaying(false); setScreen('intro'); return; }
@@ -241,8 +247,6 @@ export default function LittleSprout() {
   const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>{([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}</View>;
   const message = (text: string, retry?: () => void, retrying = false) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title={retrying ? 'Retrying…' : 'Retry'} disabled={retrying} onPress={retry} />}</View>;
   const page = (children: React.ReactNode, withNav = false) => <View style={s.root}><ScrollView contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}{pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => { setError(null); void query.refetch(); })}{saving && <Txt style={s.note}>Saving your learning…</Txt>}</ScrollView>{withNav && nav}{notice && <Pressable style={[s.hint, { position: 'absolute', bottom: bottomInset + 88, left: 25, right: 25 }]} onPress={() => setNotice(null)}><Txt style={s.hintTitle}>{notice} · Tap to close</Txt></Pressable>}</View>;
-  const sectionTitle = (title: string) => <Txt style={s.sectionTitle}>{title}</Txt>;
-  const feature = (background: string, heading: string, detail: string, cta: string, action: () => void) => <View style={[s.feature, { backgroundColor: background }]}><Txt style={s.pill}>✦  YOUR NEXT ADVENTURE</Txt><Txt style={s.featureTitle}>{heading}</Txt><Txt style={s.featureDetail}>{detail}</Txt><Image source={bunny} style={s.featureBunny} resizeMode="contain" /><Pressable style={s.featureCta} onPress={action}><Txt style={s.featureCtaText}>{cta}  →</Txt></Pressable></View>;
    if (session.error || session.loading && !session.ready) return page(message(session.loading ? 'Connecting to your garden…' : session.error!, () => void session.retry(), session.loading));
   if (retryingRead) return page(message('Connecting to your garden…', () => {}, true));
   if (!session.ready || query.isPending) return page(message('Loading your garden…'));
@@ -258,6 +262,8 @@ export default function LittleSprout() {
   const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === 2));
   canNextRef.current = canNext && !saving;
   const isVideo = scene?.type === 'video' && chapter < 2;
+  if (screen === 'home' || screen === 'profile' || screen === 'math' || screen === 'grade' || screen === 'parent') return page(<GardenPages key={screen} screen={screen} state={state} go={go} continueLesson={() => state.progress.currentSceneIndex || finished ? enterStory() : go('intro')} />, true);
+  if (screen === 'map' || screen === 'practice') return page(<ActivityPages key={screen} kind={screen === 'map' ? 'homework' : 'practice'} lessonComplete={finished} onLesson={() => go('intro')} onHome={() => go('home')} onParent={() => go('parent')} />, true);
   if (screen === 'lesson' && scene) return <View style={[s.lesson, { backgroundColor: scene.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }]} onTouchStart={e => { touchStart.current = e.nativeEvent.pageY; }} onTouchEnd={e => {
     if (touchStart.current === null) return;
     const delta = touchStart.current - e.nativeEvent.pageY; touchStart.current = null;
@@ -287,9 +293,6 @@ export default function LittleSprout() {
       <View testID="story-progress" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(isVideo ? videoProgress : 100) }} style={s.track}><View style={[s.trackFill, { width: `${isVideo ? videoProgress : 100}%` }]} /></View>{isVideo && <Txt style={[s.swipeTip, { fontSize: 9, marginTop: 4 }]}>Narration uses a synthetic voice.</Txt>}
     </View>
   </View>;
-  if (screen === 'home') return page(<><View style={s.topbar}><Txt style={s.brand}>✦ little sprout<Txt style={{ color: C.coral }}>.</Txt></Txt><Pressable style={s.avatar} onPress={() => go('profile')}><Txt style={s.avatarText}>{state.child.name[0]}</Txt></Pressable></View><Txt style={[s.eyebrow, { marginTop: 27 }]}>YOUR LEARNING GARDEN</Txt><Txt style={s.hero}>Hello, {state.child.name}!{'\n'}<Txt style={{ color: C.coral }}>Ready to grow?</Txt></Txt>{feature('#d9eee1', 'Let’s add\napples!', 'Grade 1 · Mathematics\nA five-scene bunny story', 'Start learning', () => go('intro'))}{sectionTitle('Pick a path')}<View style={s.tileRow}><Pressable style={[s.tile, { backgroundColor: '#f8ddd0' }]} onPress={() => go('map')}><Icon name="compass" /><Txt style={s.tileTitle}>Homework{'\n'}adventure</Txt><Txt style={s.smallMuted}>Coming soon</Txt></Pressable><Pressable style={[s.tile, { backgroundColor: C.lilac }]} onPress={() => go('practice')}><Icon name="star" /><Txt style={s.tileTitle}>Practice{'\n'}garden</Txt><Txt style={s.smallMuted}>Coming soon</Txt></Pressable></View>{sectionTitle('Your school path')}<Pressable style={s.curriculum} onPress={() => go('math')}><Icon name="book-open" /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>Grade 1 Mathematics</Txt><Txt style={s.smallMuted}>We’re learning addition</Txt></View><Icon name="chevron-right" /></Pressable></>, true);
-  if (screen === 'profile') return page(<>{chrome('home', 'YOUR PROFILE')}<View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /></View><Txt style={[s.pill, { alignSelf: 'center' }]}>LITTLE LEARNER</Txt><Txt style={[s.title, s.center, { marginTop: 16 }]}>{state.child.name}’s garden</Txt><Txt style={[s.muted, s.center]}>Grade 1 · Mathematics · Addition</Txt><View style={s.metricRow}><Metric value={`${state.progress.completedSceneIds.length} / ${scenes.length}`} label="Scenes done" /><Metric value={state.summary.attempts} label="Attempts" tint="#f9e5d6" /><Metric value={state.summary.independent} label="On own" tint={C.lilac} /></View><Txt style={s.note}>Your learning is saved to this device profile. Keep this app’s data to return to your garden.</Txt><Button title="Explore my learning path" onPress={() => go('math')} icon="arrow-right" /></>, true);
-  if (screen === 'math') return page(<>{chrome('home', 'GRADE 1 · MATHEMATICS')}<Txt style={[s.pill, { marginTop: 27, alignSelf: 'flex-start' }]}>YOUR SCHOOL CURRICULUM</Txt><Txt style={s.hero}>Math can be{'\n'}<Txt style={{ color: C.coral }}>an adventure.</Txt></Txt><Txt style={s.muted}>One little idea at a time. Today we’re putting groups together.</Txt>{feature('#f8e6d6', 'All about\naddition', 'Five story scenes in Bunny’s orchard.', 'Open topic', () => go('intro'))}{sectionTitle('In this topic')}{([['Meet addition', '5-scene animated lesson', 'intro', 'play'], ['Apple trail homework', 'Coming soon', 'map', 'compass'], ['Practice garden', 'Coming soon', 'practice', 'star']] as [string, string, Screen, IconName][]).map(([title, sub, dest, icon]) => <Pressable key={title} style={s.curriculum} onPress={() => go(dest)}><Icon name={icon} /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>{title}</Txt><Txt style={s.smallMuted}>{sub}</Txt></View><Icon name="chevron-right" /></Pressable>)}</>, true);
   if (screen === 'intro') return page(<>{chrome('math', 'ADDITION · LESSON')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'flex-start' }]}>5 LITTLE SCENES</Txt><Txt style={s.hero}>Two apples.{'\n'}<Txt style={{ color: C.coral }}>Then two more!</Txt></Txt><Txt style={s.muted}>Join Bunny in the orchard and put two little groups together.</Txt><View style={s.celebrateArt}><Image source={bunny} style={s.celebrateBunny} resizeMode="contain" /><Txt style={[s.bubble, { position: 'absolute', bottom: 16, left: 16 }]}>2 + 2 = ?</Txt></View><Txt style={[s.pill, { alignSelf: 'flex-start', marginBottom: 15 }]}>Swipe up through 5 scenes · then the story ends</Txt><Button title={finished ? 'See your story' : state.progress.currentSceneIndex ? 'Resume the story' : 'Play the story'} coral icon="play" onPress={enterStory} /><Txt style={s.note}>Two animated story videos, then three activities. Narration uses a synthetic voice.</Txt></>);
   return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={() => { const first = scenes[0]; const saved = state.progress.scenes.find(p => p.sceneId === first.id); sceneRef.current = first.id; position.current = saved?.positionPercent ?? 0; movedRef.current = saved?.movedCount ?? 0; resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); setChapter(0); setScreen('lesson'); }} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
 }

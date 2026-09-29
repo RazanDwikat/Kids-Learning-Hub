@@ -11,6 +11,88 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /activities:
+    get:
+      operationId: getActivityCatalog
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Available Grade 1 activities with child progress
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ActivitySummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /activities/{activityId}/runs:
+    post:
+      operationId: startActivityRun
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/activityId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActivityStart" }
+      responses:
+        "200":
+          description: Existing in-progress run or newly started run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityRun" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /activities/runs/{runId}:
+    get:
+      operationId: getActivityRun
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/runId" }]
+      responses:
+        "200":
+          description: Owned run and safe public questions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityRun" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /activities/runs/{runId}/attempts:
+    post:
+      operationId: submitActivityAttempt
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/runId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActivityAttemptInput" }
+      responses:
+        "200":
+          description: Evaluated answer and updated run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityAttemptResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /dashboard:
+    get:
+      operationId: getChildDashboard
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Child's own profile and stored progress, also used on this device's parent view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChildDashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /learning/session:
     post:
       operationId: createLearningSession
@@ -177,12 +259,158 @@ components:
       type: http
       scheme: bearer
   parameters:
+    activityId:
+      in: path
+      name: activityId
+      required: true
+      schema: { type: string }
+    runId:
+      in: path
+      name: runId
+      required: true
+      schema: { type: string, format: uuid }
     sceneId:
       in: path
       name: sceneId
       required: true
       schema: { type: string }
   schemas:
+    ActivitySummary:
+      type: object
+      required: [id, title, kind, lessonId, questionCount, completedRuns, activeRunId, bestScore]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        kind: { type: string, enum: [homework, practice, exam] }
+        lessonId: { type: string }
+        questionCount: { type: integer }
+        completedRuns: { type: integer }
+        activeRunId: { type: [string, "null"] }
+        bestScore: { type: [integer, "null"] }
+    ActivityStart:
+      type: object
+      additionalProperties: false
+      required: [requestId]
+      properties:
+        requestId: { type: string, format: uuid }
+        restart: { type: boolean, description: "Required true to start a new run after completing the previous run." }
+    ActivityAnswer:
+      type: object
+      additionalProperties: false
+      properties:
+        value: { type: string }
+        items:
+          type: array
+          items: { type: string }
+        pairs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityPair"
+    ActivityPair:
+      type: object
+      additionalProperties: false
+      required: [left, right]
+      properties:
+        left: { type: string }
+        right: { type: string }
+    ActivityQuestion:
+      type: object
+      required: [id, type, prompt, options, tokens, left, right, concept]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [choice, drag, matching, counting, direct] }
+        prompt: { type: string }
+        options:
+          type: array
+          items: { type: string }
+        tokens:
+          type: array
+          items: { type: string }
+        left:
+          type: array
+          items: { type: string }
+        right:
+          type: array
+          items: { type: string }
+        concept: { type: string }
+    ActivityFeedback:
+      type: object
+      required: [questionId, correct, feedback, answer]
+      properties:
+        questionId: { type: string }
+        correct: { type: boolean }
+        feedback: { type: string }
+        answer: { $ref: "#/components/schemas/ActivityAnswer" }
+    ActivityRun:
+      type: object
+      required: [id, activityId, kind, title, currentIndex, total, correctCount, completedAt, questions, lastFeedback]
+      properties:
+        id: { type: string }
+        activityId: { type: string }
+        kind: { type: string, enum: [homework, practice, exam] }
+        title: { type: string }
+        currentIndex: { type: integer }
+        total: { type: integer }
+        correctCount: { type: integer }
+        completedAt: { type: [string, "null"], format: date-time }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/ActivityQuestion" }
+        lastFeedback:
+          oneOf:
+            - { $ref: "#/components/schemas/ActivityFeedback" }
+            - { type: "null" }
+    ActivityAttemptInput:
+      type: object
+      additionalProperties: false
+      required: [requestId, questionId, answer]
+      properties:
+        requestId: { type: string, format: uuid }
+        questionId: { type: string }
+        answer: { $ref: "#/components/schemas/ActivityAnswer" }
+    ActivityAttemptResult:
+      type: object
+      required: [correct, feedback, run]
+      properties:
+        correct: { type: boolean }
+        feedback: { type: string }
+        run: { $ref: "#/components/schemas/ActivityRun" }
+    ChildDashboard:
+      type: object
+      required: [child, grade, subject, lesson, todayActivity, lessonsCompleted, activities, totalCorrect, totalAttempts, strengths, needsPractice, streakDays, rewards]
+      properties:
+        child:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        grade: { type: string }
+        subject: { type: string }
+        lesson:
+          type: object
+          required: [id, title, currentSceneIndex, totalScenes, completed]
+          properties:
+            id: { type: string }
+            title: { type: string }
+            currentSceneIndex: { type: integer }
+            totalScenes: { type: integer }
+            completed: { type: boolean }
+        todayActivity: { type: integer, description: "Number of stored attempts and scene completions today (UTC)." }
+        lessonsCompleted: { type: integer }
+        activities:
+          type: array
+          items: { $ref: "#/components/schemas/ActivitySummary" }
+        totalCorrect: { type: integer }
+        totalAttempts: { type: integer }
+        strengths:
+          type: array
+          items: { type: string }
+        needsPractice:
+          type: array
+          items: { type: string }
+        streakDays: { type: integer }
+        rewards: { type: integer, description: "One reward per completed run." }
     ApiError:
       type: object
       required: [error]

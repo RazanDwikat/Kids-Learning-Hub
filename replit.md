@@ -42,10 +42,10 @@ The core journey is Home → five finite full-screen vertical lesson scenes → 
 
 ## User preferences
 
-- Full-stack implementation is authorized only for the existing child Addition lesson: five scenes, interactions, attempts, saved video progress, and lesson completion. Preserve the approved mobile UI and UX.
-- Homework, exams, OCR, AI tutor, and parent dashboard are not part of this backend implementation. Existing entry points should not pretend these upcoming features are live.
+- Full-stack implementation includes the child Home and Profile, Grade 1 Mathematics, Homework, Practice/Exam, and same-child Parent Dashboard. Preserve the approved mobile UI and UX and the existing five-scene Addition experience.
+- OCR, AI tutoring, and new AI features remain out of scope. Future curriculum topics should be clearly unavailable, not pretend to be live.
 - Use an anonymous device-bound child profile for this phase; do not add sign-in or collect child personal details. Database progress survives refresh with the device credential, but clearing app storage loses access and cross-device recovery requires future account work.
-- The canvas lesson uses animated scenes with English browser/device narration and captions, not prerecorded video files. The native mobile prototype remains at the earlier storyboard stage until explicitly updated.
+- The mobile Addition lesson uses animated scenes synchronized with bundled English narration and captions. Preserve its playback controls and saved progress; the canvas is a separate reference prototype.
 - The lesson experience is full-screen vertical content, not cards or an infinite feed. It ends after five parts.
 - Use the supplied reference image as inspiration without copying it. Keep the child UI warm, visual, playful, and touch-friendly; keep parent feedback calm and informative.
 - Mistakes receive supportive language and visual explanations, never a blunt “Wrong.”

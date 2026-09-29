@@ -6,8 +6,23 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './activityAnswer';
+export * from './activityAttemptInput';
+export * from './activityAttemptResult';
+export * from './activityFeedback';
+export * from './activityPair';
+export * from './activityQuestion';
+export * from './activityQuestionType';
+export * from './activityRun';
+export * from './activityRunKind';
+export * from './activityStart';
+export * from './activitySummary';
+export * from './activitySummaryKind';
 export * from './apiError';
 export * from './badRequestResponse';
+export * from './childDashboard';
+export * from './childDashboardChild';
+export * from './childDashboardLesson';
 export * from './conflictResponse';
 export * from './createLearningSession201';
 export * from './healthStatus';

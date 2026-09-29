@@ -8,6 +8,193 @@
 import * as zod from 'zod';
 
 
+export const GetActivityCatalogResponseItem = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "lessonId": zod.string(),
+  "questionCount": zod.number().int(),
+  "completedRuns": zod.number().int(),
+  "activeRunId": zod.string().nullable(),
+  "bestScore": zod.number().int().nullable()
+})
+export const GetActivityCatalogResponse = zod.array(GetActivityCatalogResponseItem)
+
+
+export const StartActivityRunParams = zod.object({
+  "activityId": zod.coerce.string()
+})
+
+export const StartActivityRunBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "restart": zod.boolean().optional().describe('Required true to start a new run after completing the previous run.')
+})
+
+export const StartActivityRunResponse = zod.object({
+  "id": zod.string(),
+  "activityId": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "title": zod.string(),
+  "currentIndex": zod.number().int(),
+  "total": zod.number().int(),
+  "correctCount": zod.number().int(),
+  "completedAt": zod.coerce.date().nullable(),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "prompt": zod.string(),
+  "options": zod.array(zod.string()),
+  "tokens": zod.array(zod.string()),
+  "left": zod.array(zod.string()),
+  "right": zod.array(zod.string()),
+  "concept": zod.string()
+})),
+  "lastFeedback": zod.union([zod.object({
+  "questionId": zod.string(),
+  "correct": zod.boolean(),
+  "feedback": zod.string(),
+  "answer": zod.object({
+  "value": zod.string().optional(),
+  "items": zod.array(zod.string()).optional(),
+  "pairs": zod.array(zod.object({
+  "left": zod.string(),
+  "right": zod.string()
+})).optional()
+})
+}),zod.null()])
+})
+
+
+export const GetActivityRunParams = zod.object({
+  "runId": zod.coerce.string().uuid()
+})
+
+export const GetActivityRunResponse = zod.object({
+  "id": zod.string(),
+  "activityId": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "title": zod.string(),
+  "currentIndex": zod.number().int(),
+  "total": zod.number().int(),
+  "correctCount": zod.number().int(),
+  "completedAt": zod.coerce.date().nullable(),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "prompt": zod.string(),
+  "options": zod.array(zod.string()),
+  "tokens": zod.array(zod.string()),
+  "left": zod.array(zod.string()),
+  "right": zod.array(zod.string()),
+  "concept": zod.string()
+})),
+  "lastFeedback": zod.union([zod.object({
+  "questionId": zod.string(),
+  "correct": zod.boolean(),
+  "feedback": zod.string(),
+  "answer": zod.object({
+  "value": zod.string().optional(),
+  "items": zod.array(zod.string()).optional(),
+  "pairs": zod.array(zod.object({
+  "left": zod.string(),
+  "right": zod.string()
+})).optional()
+})
+}),zod.null()])
+})
+
+
+export const SubmitActivityAttemptParams = zod.object({
+  "runId": zod.coerce.string().uuid()
+})
+
+export const SubmitActivityAttemptBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "questionId": zod.string(),
+  "answer": zod.object({
+  "value": zod.string().optional(),
+  "items": zod.array(zod.string()).optional(),
+  "pairs": zod.array(zod.object({
+  "left": zod.string(),
+  "right": zod.string()
+})).optional()
+})
+})
+
+export const SubmitActivityAttemptResponse = zod.object({
+  "correct": zod.boolean(),
+  "feedback": zod.string(),
+  "run": zod.object({
+  "id": zod.string(),
+  "activityId": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "title": zod.string(),
+  "currentIndex": zod.number().int(),
+  "total": zod.number().int(),
+  "correctCount": zod.number().int(),
+  "completedAt": zod.coerce.date().nullable(),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "prompt": zod.string(),
+  "options": zod.array(zod.string()),
+  "tokens": zod.array(zod.string()),
+  "left": zod.array(zod.string()),
+  "right": zod.array(zod.string()),
+  "concept": zod.string()
+})),
+  "lastFeedback": zod.union([zod.object({
+  "questionId": zod.string(),
+  "correct": zod.boolean(),
+  "feedback": zod.string(),
+  "answer": zod.object({
+  "value": zod.string().optional(),
+  "items": zod.array(zod.string()).optional(),
+  "pairs": zod.array(zod.object({
+  "left": zod.string(),
+  "right": zod.string()
+})).optional()
+})
+}),zod.null()])
+})
+})
+
+
+export const GetChildDashboardResponse = zod.object({
+  "child": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}),
+  "grade": zod.string(),
+  "subject": zod.string(),
+  "lesson": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "currentSceneIndex": zod.number().int(),
+  "totalScenes": zod.number().int(),
+  "completed": zod.boolean()
+}),
+  "todayActivity": zod.number().int().describe('Number of stored attempts and scene completions today (UTC).'),
+  "lessonsCompleted": zod.number().int(),
+  "activities": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "lessonId": zod.string(),
+  "questionCount": zod.number().int(),
+  "completedRuns": zod.number().int(),
+  "activeRunId": zod.string().nullable(),
+  "bestScore": zod.number().int().nullable()
+})),
+  "totalCorrect": zod.number().int(),
+  "totalAttempts": zod.number().int(),
+  "strengths": zod.array(zod.string()),
+  "needsPractice": zod.array(zod.string()),
+  "streakDays": zod.number().int(),
+  "rewards": zod.number().int().describe('One reward per completed run.')
+})
+
+
 export const CreateLearningSessionResponse = zod.object({
   "token": zod.string(),
   "state": zod.object({

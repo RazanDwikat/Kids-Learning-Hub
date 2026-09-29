@@ -5,6 +5,140 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type ActivitySummaryKind = typeof ActivitySummaryKind[keyof typeof ActivitySummaryKind];
+
+
+export const ActivitySummaryKind = {
+  homework: 'homework',
+  practice: 'practice',
+  exam: 'exam',
+} as const;
+
+export interface ActivitySummary {
+  id: string;
+  title: string;
+  kind: ActivitySummaryKind;
+  lessonId: string;
+  questionCount: number;
+  completedRuns: number;
+  /** @nullable */
+  activeRunId: string | null;
+  /** @nullable */
+  bestScore: number | null;
+}
+
+export interface ActivityStart {
+  requestId: string;
+  /** Required true to start a new run after completing the previous run. */
+  restart?: boolean;
+}
+
+export interface ActivityPair {
+  left: string;
+  right: string;
+}
+
+export interface ActivityAnswer {
+  value?: string;
+  items?: string[];
+  pairs?: ActivityPair[];
+}
+
+export type ActivityQuestionType = typeof ActivityQuestionType[keyof typeof ActivityQuestionType];
+
+
+export const ActivityQuestionType = {
+  choice: 'choice',
+  drag: 'drag',
+  matching: 'matching',
+  counting: 'counting',
+  direct: 'direct',
+} as const;
+
+export interface ActivityQuestion {
+  id: string;
+  type: ActivityQuestionType;
+  prompt: string;
+  options: string[];
+  tokens: string[];
+  left: string[];
+  right: string[];
+  concept: string;
+}
+
+export interface ActivityFeedback {
+  questionId: string;
+  correct: boolean;
+  feedback: string;
+  answer: ActivityAnswer;
+}
+
+export type ActivityRunKind = typeof ActivityRunKind[keyof typeof ActivityRunKind];
+
+
+export const ActivityRunKind = {
+  homework: 'homework',
+  practice: 'practice',
+  exam: 'exam',
+} as const;
+
+export interface ActivityRun {
+  id: string;
+  activityId: string;
+  kind: ActivityRunKind;
+  title: string;
+  currentIndex: number;
+  total: number;
+  correctCount: number;
+  /** @nullable */
+  completedAt: string | null;
+  questions: ActivityQuestion[];
+  lastFeedback: ActivityFeedback | null;
+}
+
+export interface ActivityAttemptInput {
+  requestId: string;
+  questionId: string;
+  answer: ActivityAnswer;
+}
+
+export interface ActivityAttemptResult {
+  correct: boolean;
+  feedback: string;
+  run: ActivityRun;
+}
+
+export type ChildDashboardChild = {
+  id: string;
+  name: string;
+};
+
+export type ChildDashboardLesson = {
+  id: string;
+  title: string;
+  currentSceneIndex: number;
+  totalScenes: number;
+  completed: boolean;
+};
+
+export interface ChildDashboard {
+  child: ChildDashboardChild;
+  grade: string;
+  subject: string;
+  lesson: ChildDashboardLesson;
+  /** Number of stored attempts and scene completions today (UTC). */
+  todayActivity: number;
+  lessonsCompleted: number;
+  activities: ActivitySummary[];
+  totalCorrect: number;
+  totalAttempts: number;
+  strengths: string[];
+  needsPractice: string[];
+  streakDays: number;
+  /** One reward per completed run. */
+  rewards: number;
+}
+
 export interface ApiError {
   error: string;
 }
