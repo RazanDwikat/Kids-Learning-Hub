@@ -1,19 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Apple, ArrowDown, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, CircleHelp, Compass, Gift, Heart, Home as HomeIcon, LockKeyhole, Medal, Pause, Play, Plus, RotateCcw, Sparkles, Sprout, Star, UserRound, Volume2, VolumeX, X } from 'lucide-react';
+import { useState } from 'react';
+import { Apple, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, CircleHelp, Compass, Gift, Heart, Home as HomeIcon, LockKeyhole, Medal, Play, RotateCcw, Sparkles, Sprout, Star, UserRound } from 'lucide-react';
+import { LessonFlow } from './LessonFlow';
 import '../_group.css';
 
 type Screen = 'home'|'profile'|'math'|'intro'|'lesson'|'complete'|'map'|'question'|'treasure'|'practice'|'practiceDone'|'parent'|'insights';
 type Initial = 'home'|'lesson'|'map'|'practice'|'parent';
 type RecordItem = { independent:number; hints:number; explanations:number; attempts:number };
 const bunny = '/__mockup/images/sprout-bunny.png';
-const orchard = '/__mockup/images/sprout-orchard.png';
-const chapters = [
-  { label:'A little apple story', subtitle:'Bunny has 2 apples. Mama brings 2 more!', bg:'sky' },
-  { label:'Put them together!', subtitle:'Addition means making one big group.', bg:'apricot' },
-  { label:'Your turn to help', subtitle:'Tap the apples to move them over.', bg:'lilac' },
-  { label:'Count with Bunny', subtitle:'How many apples altogether?', bg:'butter' },
-  { label:'Bunny’s big challenge', subtitle:'One last little puzzle!', bg:'mint' }
-];
 const homework = [
   { place:'Apple tree', equation:'2 + 1', answer:3, options:[2,3,4], a:2,b:1 },
   { place:'Little bridge', equation:'3 + 2', answer:5, options:[4,5,6], a:3,b:2 },
@@ -39,13 +32,7 @@ function Brand(){ return <div className="brand"><span className="brand-mark"><Sp
 
 export function Prototype({initial='home'}:{initial?:Initial}) {
   const [screen,setScreen] = useState<Screen>(initial);
-  const [chapter,setChapter] = useState(0);
-  const [playing,setPlaying] = useState(true);
-  const [videoProgress,setVideoProgress] = useState(0);
-  const [muted,setMuted] = useState(false);
-  const [moved,setMoved] = useState(0);
   const [feedback,setFeedback] = useState(false);
-  const [lessonSolved,setLessonSolved] = useState(false);
   const [unlocked,setUnlocked] = useState(0);
   const [stop,setStop] = useState(0);
   const [practiceIndex,setPracticeIndex] = useState(0);
@@ -55,16 +42,8 @@ export function Prototype({initial='home'}:{initial?:Initial}) {
   const [lessonFinished,setLessonFinished] = useState(initial==='map'||initial==='practice'||initial==='parent');
   const [homeworkFinished,setHomeworkFinished] = useState(initial==='practice'||initial==='parent');
   const [practiceFinished,setPracticeFinished] = useState(initial==='parent');
-  const touchStart = useRef<number|null>(null);
   const go=(s:Screen)=>{setFeedback(false);setScreen(s);};
-  const resetLesson=()=>{setChapter(0);setMoved(0);setLessonSolved(false);setVideoProgress(0);setPlaying(true);go('lesson');};
-  const nextChapter=()=>{setFeedback(false);setMoved(0);setLessonSolved(false);setVideoProgress(0);setPlaying(true);if(chapter===4){setLessonFinished(true);go('complete');}else setChapter(c=>c+1);};
-  const previousChapter=()=>{if(chapter>0){setChapter(c=>c-1);setFeedback(false);setLessonSolved(false);setMoved(0);setVideoProgress(0);}else go('intro');};
-  useEffect(()=>{
-    if(screen!=='lesson'||!playing||videoProgress>=100) return;
-    const timer=window.setInterval(()=>setVideoProgress(p=>Math.min(100,p+2)),110);
-    return ()=>window.clearInterval(timer);
-  },[screen,playing,videoProgress,chapter]);
+  const resetLesson=()=>go('lesson');
   const solve=(value:number,correct:number,done:()=>void)=>{
     setRecord(r=>({...r,attempts:r.attempts+1}));
     if(value===correct){setRecord(r=>({...r,independent:r.independent+(!feedback?1:0)}));setFeedback(false);done();}
@@ -88,30 +67,7 @@ export function Prototype({initial='home'}:{initial?:Initial}) {
   const top=(dest:Screen,title?:string)=><div className="topbar">{back(dest)}{title?<span className="eyebrow">{title}</span>:<Brand/>}<span style={{width:43}}/></div>;
   const moreHelp=()=>{setFeedback(true);setRecord(r=>({...r,explanations:r.explanations+1}));};
 
-  if(screen==='lesson') {
-    const interactive=chapter>=2;
-    const canNext=chapter<2||lessonSolved||(chapter===2&&moved>=2);
-    return <div className="sprout"><main className="lesson-screen" onTouchStart={e=>touchStart.current=e.touches[0].clientY} onTouchEnd={e=>{if(touchStart.current===null)return;const delta=touchStart.current-e.changedTouches[0].clientY;if(delta>70&&canNext)nextChapter();else if(delta< -70)previousChapter();touchStart.current=null;}}>
-      <div className={`lesson-stage ${chapters[chapter].bg}`}>
-        <div className="lesson-top"><button className="icon-btn" onClick={()=>go('intro')} aria-label="Close lesson"><X size={21}/></button><div className="lesson-progress">{chapters.map((_,i)=><i key={i} className={i<=chapter?'done':''}/>)}</div><span className="chapter-count">{chapter+1} / 5</span></div>
-        <div className="chapter-header"><span className="eyebrow">STORYBOARD · ADDITION</span><h1>{chapters[chapter].label}</h1><p>{chapters[chapter].subtitle}</p></div>
-        <div className="chapter-art">
-          {chapter===0&&<><img className="orchard-image" src={orchard} alt="Bunny in the apple orchard with apples"/><div className="story-bubble" style={{position:'absolute',bottom:4}}>2 + 2 = 4</div></>}
-          {chapter===1&&<><div className="apple-groups"><Apples count={2}/><span className="operator">+</span><Apples count={2}/></div><div className="sum-line"><span>2</span><Plus size={31}/><span>2</span><span>=</span><span>4</span></div><div className="story-bubble" style={{fontSize:18}}>Two little groups become one!</div></>}
-          {chapter===2&&<><img className="bunny-image" src={bunny} alt="Bunny ready to collect apples"/><div className="apple-groups"><Apples count={2+moved}/><span className="operator">←</span><div className="apple-group">{Array.from({length:2-moved},(_,i)=><button key={i} aria-label="Move an apple" onClick={()=>{setMoved(v=>v+1);if(moved===1)setLessonSolved(true);}} style={{border:0,background:'none',padding:0}}><Apple className="apple"/></button>)}</div></div><span className="mini-label">{moved===2?'Wonderful! 2 + 2 = 4':'Tap each apple on the right'}</span></>}
-          {chapter===3&&<><div className="apple-groups"><Apples count={3}/><span className="operator">+</span><Apples count={2}/></div><div className="sum-line">3 + 2 = ?</div>{feedback&&<CountHint a={3} b={2}/>}</>}
-          {chapter===4&&<><img className="bunny-image" src={bunny} alt="Bunny cheering you on"/><div className="sum-line">4 + 3 = ?</div>{feedback&&<CountHint a={4} b={3}/>}</>}
-        </div>
-        <div className="chapter-bottom">
-          {(chapter===3||chapter===4)&&!lessonSolved&&<div className="answer-options">{(chapter===3?[4,5,6]:[6,7,8]).map(n=><button key={n} onClick={()=>solve(n,chapter===3?5:7,()=>setLessonSolved(true))}>{n}</button>)}</div>}
-          {lessonSolved&&chapter>=3&&<span className="pill"><Check size={15}/> Yes! You counted them all.</span>}
-          <div className="lesson-controls"><button className="round-control" onClick={()=>setPlaying(v=>!v)} aria-label={playing?'Pause storyboard':'Play storyboard'}>{playing?<Pause size={21} fill="currentColor"/>:<Play size={21} fill="currentColor"/>}</button><button className="round-control" onClick={()=>setMuted(v=>!v)} aria-label={muted?'Turn narration cue on':'Turn narration cue off'}>{muted?<VolumeX size={21}/>:<Volume2 size={21}/>}</button><button className="button coral" disabled={!canNext} onClick={nextChapter}>{chapter===4?'Finish lesson':'Next scene'}<ArrowRight size={18}/></button></div>
-          <div className="swipe-tip"><ArrowDown size={13}/>{interactive&&!canNext?'Try the activity to continue':'Swipe up or tap Next · finite story'}</div>
-          <div style={{height:3,width:'100%',background:'rgba(57,117,103,.16)',borderRadius:5}}><div style={{height:'100%',width:`${videoProgress}%`,background:'#397567',borderRadius:5,transition:'width .1s linear'}}/></div>
-        </div>
-      </div>
-    </main></div>;
-  }
+  if(screen==='lesson') return <LessonFlow onExit={()=>go('intro')} onComplete={()=>{setLessonFinished(true);go('complete');}} onAttempt={correct=>setRecord(r=>({...r,attempts:r.attempts+1,independent:r.independent+(correct?1:0),hints:r.hints+(correct?0:1)}))}/>;
 
   if(screen==='home') return <div className="sprout"><main className="screen scroll">
     <div className="topbar"><Brand/><div className="top-actions"><button className="avatar" onClick={()=>go('profile')} aria-label="Open Sam's profile">S</button></div></div>
@@ -126,7 +82,7 @@ export function Prototype({initial='home'}:{initial?:Initial}) {
 
   if(screen==='math') return <div className="sprout"><main className="screen">{top('home','GRADE 1 · MATHEMATICS')}<div style={{marginTop:32}}><span className="pill"><BookOpen size={15}/> YOUR SCHOOL CURRICULUM</span><h1 className="hero-title">Math can be<br/><span style={{color:'var(--coral)'}}>an adventure.</span></h1><p className="body-copy" style={{marginTop:12}}>One little idea at a time. Today, we’re putting groups together.</p></div><div className="feature" style={{marginTop:30,background:'#f8e6d6',minHeight:320}}><span className="pill" style={{background:'#fff8e5'}}>TOPIC 01 · READY TO EXPLORE</span><h2>All about<br/>addition</h2><p>Five story scenes, an adventure trail, and a practice garden.</p><img src={bunny} alt="Bunny holding apples"/><button className="mini-cta" onClick={()=>go('intro')}>Open topic <ArrowRight size={15}/></button></div><div className="section-head"><h2>In this topic</h2></div><button className="curriculum-row" onClick={()=>go('intro')}><span className="row-icon"><Play size={21}/></span><span><strong>Meet addition</strong><small>5-scene illustrated lesson</small></span><ChevronRight size={18}/></button><button className="curriculum-row" onClick={()=>go('map')}><span className="row-icon" style={{background:'#e2ecdf'}}><Compass size={21}/></span><span><strong>Apple trail homework</strong><small>4 questions · unlock each stop</small></span><ChevronRight size={18}/></button><button className="curriculum-row" onClick={()=>go('practice')}><span className="row-icon" style={{background:'#eee4f2'}}><Star size={21}/></span><span><strong>Practice garden</strong><small>6 ways to show what you know</small></span><ChevronRight size={18}/></button></main>{navigation}</div>;
 
-  if(screen==='intro') return <div className="sprout"><main className="screen">{top('math','ADDITION · LESSON')}<div style={{marginTop:28}}><span className="pill"><Play size={14}/> 5 LITTLE SCENES</span><h1 className="hero-title">Two apples.<br/><span style={{color:'var(--coral)'}}>Then two more!</span></h1><p className="body-copy" style={{marginTop:12}}>Join Bunny in the orchard and discover what happens when we put groups together.</p></div><div className="celebrate-art" style={{height:320,marginTop:25,background:'#e0eee1'}}><img src={bunny} alt="Your bunny guide in the orchard"/><div className="story-bubble" style={{position:'absolute',left:17,bottom:17,fontSize:19}}>2 + 2 = ?</div></div><div className="pill" style={{marginBottom:18}}>Swipe up through 5 scenes · then the story ends</div><button className="button coral" onClick={resetLesson}>Play the story <Play size={18} fill="currentColor"/></button><p className="note">Illustrated interactive storyboard preview · not a produced video</p></main></div>;
+  if(screen==='intro') return <div className="sprout"><main className="screen">{top('math','ADDITION · LESSON')}<div style={{marginTop:28}}><span className="pill"><Play size={14}/> 5 LITTLE SCENES</span><h1 className="hero-title">Two apples.<br/><span style={{color:'var(--coral)'}}>Then two more!</span></h1><p className="body-copy" style={{marginTop:12}}>Join Bunny in the orchard and discover what happens when we put groups together.</p></div><div className="celebrate-art" style={{height:320,marginTop:25,background:'#e0eee1'}}><img src={bunny} alt="Your bunny guide in the orchard"/><div className="story-bubble" style={{position:'absolute',left:17,bottom:17,fontSize:19}}>2 + 2 = ?</div></div><div className="pill" style={{marginBottom:18}}>Swipe up through 5 scenes · then the story ends</div><button className="button coral" onClick={resetLesson}>Open the story <Play size={18} fill="currentColor"/></button><p className="note">Animated scenes with English device narration and captions. Tap Play story to begin. Voice availability depends on your browser.</p></main></div>;
 
   if(screen==='complete'||screen==='treasure'||screen==='practiceDone') {
     const isLesson=screen==='complete', isTreasure=screen==='treasure';

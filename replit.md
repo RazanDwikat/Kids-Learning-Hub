@@ -38,7 +38,7 @@ The core journey is Home → five finite full-screen vertical lesson scenes → 
 
 - Await explicit design approval before full-product implementation.
 - Do not build a backend, database, authentication, AI, or OCR during this prototype phase.
-- Treat lesson animations as prototype video storyboards, not finished instructional videos.
+- The canvas lesson uses animated scenes with English browser/device narration and captions, not prerecorded video files. The native mobile prototype remains at the earlier storyboard stage until explicitly updated.
 - The lesson experience is full-screen vertical content, not cards or an infinite feed. It ends after five parts.
 - Use the supplied reference image as inspiration without copying it. Keep the child UI warm, visual, playful, and touch-friendly; keep parent feedback calm and informative.
 - Mistakes receive supportive language and visual explanations, never a blunt “Wrong.”

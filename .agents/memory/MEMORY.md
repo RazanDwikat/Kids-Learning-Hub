@@ -1,0 +1,1 @@
+- [Child-facing narration](child-audio.md) — check provider eligibility for under-13 products; device speech varies by browser and needs captions.

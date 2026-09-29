@@ -1,0 +1,438 @@
+Update the existing Grade 1 Mathematics → Addition learning experience.
+
+Do NOT redesign the entire application.
+
+Focus specifically on improving the **5 vertical learning videos** so they feel like real animated educational content for children aged 6–7.
+
+IMPORTANT:
+All visible UI text, instructions, buttons, labels, captions, and educational content must be in **English**.
+
+## Main Goal
+
+The current learning videos feel too static because they do not have enough animation, storytelling, or voice.
+
+I want the learning experience to feel like a short animated educational show.
+
+The child should be able to vertically scroll through 5 full-screen educational videos.
+
+The experience should feel inspired by short-form vertical video apps, but it must remain a finite educational lesson.
+
+There are exactly:
+
+**5 videos → Lesson Complete**
+
+No infinite scrolling.
+
+---
+
+# VIDEO 1 — STORY INTRODUCTION
+
+Create a short animated story that teaches addition through a simple situation.
+
+### Story
+
+A cute little rabbit has **2 apples**.
+
+Show the rabbit holding:
+
+🍎 🍎
+
+Then the rabbit's mother comes and gives the rabbit **2 more apples**.
+
+Show:
+
+🍎 🍎 + 🍎 🍎
+
+The rabbit now has:
+
+🍎 🍎 🍎 🍎
+
+Then clearly introduce:
+
+**2 + 2 = 4**
+
+### Animation
+
+The story should actually be animated.
+
+For example:
+
+1. Rabbit appears on screen.
+2. Rabbit is holding two apples.
+3. The two apples gently bounce.
+4. Rabbit's mother enters the scene.
+5. Mother gives two additional apples.
+6. The new apples move toward the rabbit.
+7. All four apples appear together.
+8. The number **4** appears with a small celebration animation.
+9. The equation **2 + 2 = 4** appears.
+
+Use smooth, simple animations suitable for a 6–7 year old.
+
+The animation should communicate the concept even if the child is not reading.
+
+---
+
+# VOICEOVER
+
+Add voice narration to the story.
+
+The voice should sound:
+
+* Warm
+* Friendly
+* Child-friendly
+* Clear
+* Slow enough for a 6–7 year old
+* Natural
+* Encouraging
+
+Example narration:
+
+"Meet our little bunny!"
+
+"He has two apples."
+
+"Look! His mom gave him two more apples."
+
+"Let's count them together."
+
+"One, two, three, four!"
+
+"That means two plus two equals four!"
+
+The voice should be synchronized with the animation.
+
+Do not make the narration too fast.
+
+---
+
+# VIDEO 2 — WHAT DOES ADDITION MEAN?
+
+Create an animated explanation of the concept.
+
+The main idea:
+
+**Addition means putting groups together.**
+
+Start with:
+
+🍎 🍎
+
+Then show another group:
+
+🍎 🍎
+
+Animate the two groups moving together.
+
+Then show:
+
+🍎 🍎 🍎 🍎
+
+Then:
+
+**2 + 2 = 4**
+
+### Voiceover
+
+Example:
+
+"Addition means putting groups together."
+
+"We have two apples."
+
+"Now we add two more."
+
+"Let's put them together."
+
+"Now we have four apples!"
+
+"Two plus two equals four."
+
+Use animation to visually demonstrate every important part of the explanation.
+
+---
+
+# VIDEO 3 — INTERACTIVE LEARNING
+
+Make the third video interactive.
+
+The child should not only watch.
+
+For example:
+
+Show:
+
+🍎 🍎
+
+and another group:
+
+🍎 🍎
+
+Ask:
+
+**"How many apples are there altogether?"**
+
+The child can interact with the objects.
+
+For example:
+
+* Drag the apples together
+* Tap the apples to count them
+* Select the correct answer
+
+When the child interacts correctly:
+
+Use:
+
+* Positive animation
+* Small celebration
+* Friendly voice
+
+Example:
+
+"Great job!"
+
+"Let's count them together."
+
+"One, two, three, four!"
+
+"Four apples!"
+
+When the child answers incorrectly:
+
+Do NOT show a harsh red "WRONG".
+
+Instead:
+
+"Almost! Let's try it together."
+
+Then visually guide the child.
+
+---
+
+# VIDEO 4 — PRACTICE
+
+Create a short animated practice question.
+
+Example:
+
+### Question
+
+**3 + 2 = ?**
+
+Show:
+
+🍎 🍎 🍎 + 🍎 🍎
+
+Then show possible answers:
+
+**4   5   6**
+
+The child selects the answer.
+
+When correct:
+
+🎉 Celebration animation
+
+Voice:
+
+"That's right!"
+
+"Three plus two equals five!"
+
+When incorrect:
+
+Use a friendly animation and voice:
+
+"Almost!"
+
+"Let's count the apples together."
+
+Then guide the child to the correct answer.
+
+---
+
+# VIDEO 5 — MINI CHALLENGE
+
+Create a final challenge.
+
+Example:
+
+### Challenge
+
+**4 + 3 = ?**
+
+Show a visual representation using objects.
+
+Let the child answer.
+
+After the child answers correctly:
+
+Create a bigger celebration.
+
+For example:
+
+* Confetti
+* Stars
+* Character celebration
+* Happy sound
+* Encouraging voice
+
+Voice:
+
+"Amazing!"
+
+"You completed the addition lesson!"
+
+Then show:
+
+# 🎉 Lesson Complete!
+
+**5 / 5**
+
+---
+
+# ANIMATION STYLE
+
+Use a consistent visual style across all five videos.
+
+The animation should feel like a children's educational cartoon.
+
+Use:
+
+* Cute characters
+* Simple backgrounds
+* Large objects
+* Friendly facial expressions
+* Smooth movement
+* Small bounce effects
+* Gentle transitions
+* Celebration effects
+
+Avoid overly complex animation.
+
+The goal is clarity and learning, not cinematic complexity.
+
+The child should immediately understand:
+
+**What is happening?**
+
+**What should I look at?**
+
+**What should I do?**
+
+---
+
+# AUDIO SYSTEM
+
+Add support for:
+
+### Voice narration
+
+Each video should have its own narration.
+
+### Sound effects
+
+Use subtle child-friendly sounds for:
+
+* Correct answer
+* Incorrect attempt
+* Object movement
+* Reward
+* Completion
+
+Do not make the sounds annoying or overwhelming.
+
+### Mute control
+
+The child should have a clear audio control.
+
+If possible, include:
+
+🔊 Sound On
+🔇 Sound Off
+
+The application should remember the child's audio preference.
+
+---
+
+# VERTICAL VIDEO EXPERIENCE
+
+Keep the existing vertical scrolling experience.
+
+The child should be able to swipe vertically:
+
+**Video 1 / 5**
+↓
+**Video 2 / 5**
+↓
+**Video 3 / 5**
+↓
+**Video 4 / 5**
+↓
+**Video 5 / 5**
+↓
+🎉 Lesson Complete
+
+Each video should occupy most or all of the screen.
+
+Do not turn these into cards.
+
+Do not use horizontal cards.
+
+Do not create an infinite feed.
+
+This should feel like a **finite vertical educational story**.
+
+---
+
+# UI TEXT
+
+All UI and educational content must be in English.
+
+Examples:
+
+* "Let's Learn!"
+* "Watch and Learn"
+* "Let's Count!"
+* "Your Turn!"
+* "Great Job!"
+* "Almost!"
+* "Try Again"
+* "Let's Do It Together"
+* "Amazing!"
+* "Lesson Complete"
+
+Keep language simple enough for a Grade 1 child.
+
+---
+
+# IMPORTANT
+
+Do not replace the existing design system.
+
+Keep the current visual style inspired by the reference image.
+
+Improve the learning videos by adding:
+
+1. Real animation
+2. Character movement
+3. Storytelling
+4. Voice narration
+5. Sound effects
+6. Interactive moments
+7. Positive feedback animations
+8. A clear beginning and ending
+
+The final result should feel like:
+
+**A child is watching and interacting with a tiny animated educational story, not reading a static webpage.**
+
+Focus on making the first lesson:
+
+**Grade 1 → Math → Addition → 2 + 2 = 4**
+
+feel polished, fun, understandable, and age-appropriate.
+
+Implement these improvements in the existing prototype and make sure the full 5-video flow works from beginning to end.
