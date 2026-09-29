@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Little Sprout"
+description = "UI/UX mobile prototype for a child-friendly Grade 1 addition learning journey with five finite lesson scenes, homework adventure, practice, and parent insights. No backend or authentication."
+version = "1.0.0"
+id = "artifacts/little-sprout"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 18284
+
+[services.development]
+run = "pnpm --filter @workspace/little-sprout run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/little-sprout", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/little-sprout", "run", "serve" ]
+
+[services.env]
+PORT = "18284"
+BASE_PATH = "/"

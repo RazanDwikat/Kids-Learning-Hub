@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Little Sprout",
+    "slug": "little-sprout",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/sprout-icon.png",
+    "scheme": "little-sprout",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/sprout-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fff9ef"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/sprout-icon.png",
+        "backgroundColor": "#fff9ef"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/sprout-icon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

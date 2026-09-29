@@ -1,6 +1,6 @@
-# [Project name]
+# Little Sprout
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An illustrated educational companion for children aged 6–7, starting with Grade 1 → Mathematics → Addition.
 
 ## Run & Operate
 
@@ -30,11 +30,18 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The current deliverable is a UI/UX prototype in two forms: a canvas design preview and an Expo mobile prototype. The complete requested brief is in `attached_assets/Pasted-I-want-to-build-a-children-s-educational-learning-platf_1790687073677.txt`.
+
+The core journey is Home → five finite full-screen vertical lesson scenes → lesson celebration → unlocking homework adventure → practice → parent feedback. Parent views distinguish independent answers, hints, explanations, and multiple attempts. Learning content stays tied to the school curriculum.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Await explicit design approval before full-product implementation.
+- Do not build a backend, database, authentication, AI, or OCR during this prototype phase.
+- Treat lesson animations as prototype video storyboards, not finished instructional videos.
+- The lesson experience is full-screen vertical content, not cards or an infinite feed. It ends after five parts.
+- Use the supplied reference image as inspiration without copying it. Keep the child UI warm, visual, playful, and touch-friendly; keep parent feedback calm and informative.
+- Mistakes receive supportive language and visual explanations, never a blunt “Wrong.”
 
 ## Gotchas
 
