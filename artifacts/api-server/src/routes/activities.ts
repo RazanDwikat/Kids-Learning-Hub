@@ -2,16 +2,20 @@ import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
-  db, activities, activityQuestions, activityRuns, activityAttempts, learningSessions,
+  db, activities, activityQuestions, activityRuns, activityAttempts, activityRewardConfigs, learningSessions,
   learningChildren, learningEnrollments, learningAttempts, learningProgress, learningScenes,
 } from "@workspace/db";
 import {
   GetActivityCatalogResponse, StartActivityRunParams, StartActivityRunBody, StartActivityRunResponse,
   GetActivityRunParams, GetActivityRunResponse, SubmitActivityAttemptParams, SubmitActivityAttemptBody,
   SubmitActivityAttemptResponse, GetChildDashboardResponse,
+  ListTextbooksResponse, ListTextbookPagesParams, ListTextbookPagesResponse,
+  StartTextbookHomeworkParams, StartTextbookHomeworkBody, StartTextbookHomeworkResponse,
+  GetHomeworkPhotoStatusResponse, GetRewardConfigResponse, SaveRewardConfigBody, SaveRewardConfigResponse,
 } from "@workspace/api-zod";
 import { additionCatalog, ADDITION_LESSON_ID } from "../lib/learning-curriculum";
 import { ensureActivitiesReady } from "../lib/activity-seed";
+import { book, pages, activityIdForPage } from "../lib/textbook-catalog";
 
 const router: IRouter = Router();
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -21,7 +25,7 @@ class HttpError extends Error {
 const fail = (status: number, message: string): never => { throw new HttpError(status, message); };
 const child = (res: Response) => res.locals.childId as string;
 
-router.use(["/activities", "/dashboard"], async (req, res, next): Promise<void> => {
+router.use(["/activities", "/dashboard", "/textbooks", "/homework", "/reward-config"], async (req, res, next): Promise<void> => {
   await ensureActivitiesReady();
   const auth = req.headers.authorization;
   if (!auth || !/^Bearer [A-Za-z0-9_-]{43}$/.test(auth)) throw new HttpError(401, "Bearer token required");
@@ -59,26 +63,65 @@ async function presentRun(run: typeof activityRuns.$inferSelect, tx: Tx | typeof
   if (!activity) fail(404, "Activity not found");
   const questions = await tx.select().from(activityQuestions).where(eq(activityQuestions.activityId, run.activityId)).orderBy(asc(activityQuestions.index));
   const [last] = await tx.select().from(activityAttempts).where(eq(activityAttempts.runId, run.id)).orderBy(desc(activityAttempts.createdAt), desc(activityAttempts.id)).limit(1);
+  const attempts = await tx.select({ id: activityAttempts.id }).from(activityAttempts).where(eq(activityAttempts.runId, run.id));
+  const page = pages.find(p => activityIdForPage(p.number) === run.activityId && p.questions.length);
   return {
     id: run.id, activityId: run.activityId, kind: activity.kind, title: activity.title,
     currentIndex: run.currentIndex, total: questions.length, correctCount: run.correctCount,
     completedAt: run.completedAt,
-    questions: questions.map(({ id, type, prompt, options, tokens, left, right, concept }) => ({ id, type, prompt, options, tokens, left, right, concept })),
+    questions: questions.map(({ id, type, prompt, options, tokens, left, right, concept, index }) => ({
+      id, type, prompt, options, tokens, left, right, concept,
+      ...(page ? { number: index + 1, ...(page.number === 4 ? { illustration: index % 2 === 0 ? "apples" : "stars" } : {}) } : {}),
+    })),
     lastFeedback: last ? { questionId: last.questionId, correct: last.correct, feedback: last.feedback, answer: last.answer } : null,
+    source: page ? { bookId: book.id, pageNumber: page.number, lesson: page.lesson } : null,
+    reward: run.completedAt && activity.kind === "exam" ? (run.rewardSnapshot ?? defaultReward) : null,
+    attemptCount: attempts.length,
   };
 }
+
+router.get("/textbooks", (_req, res): void => {
+  res.json(ListTextbooksResponse.parse([book]));
+});
+router.get("/textbooks/:bookId/pages", (req, res): void => {
+  const parsed = ListTextbookPagesParams.safeParse(req.params);
+  if (!parsed.success || parsed.data.bookId !== book.id) fail(404, "Book not found");
+  res.json(ListTextbookPagesResponse.parse(pages.map(p => ({
+    number: p.number, lesson: p.lesson, title: p.title, exerciseCount: p.questions.length,
+    activityId: p.questions.length ? activityIdForPage(p.number) : null,
+  }))));
+});
+router.get("/homework/photo/status", (_req, res): void => {
+  res.json(GetHomeworkPhotoStatusResponse.parse({ available: false, requiresParentReview: true,
+    message: "Photo recognition is unavailable until an OCR/vision provider and parent question review are connected." }));
+});
+router.post("/homework/photo/recognize", (_req, res): void => {
+  res.status(503).json({ error: "Photo recognition is unavailable: connect OCR/vision and parent review before creating questions." });
+});
+const defaultReward = { enabled: false, category: "activity", title: "Choose together", message: "" };
+async function rewardConfig(childId: string, tx: Tx | typeof db = db) {
+  const [row] = await tx.select().from(activityRewardConfigs).where(eq(activityRewardConfigs.childId, childId));
+  return row ? { enabled: row.enabled, category: row.category, title: row.title, message: row.message } : defaultReward;
+}
+router.get("/reward-config", async (_req, res): Promise<void> => {
+  res.json(GetRewardConfigResponse.parse(await rewardConfig(child(res))));
+});
+router.put("/reward-config", async (req, res): Promise<void> => {
+  const body = SaveRewardConfigBody.safeParse(req.body);
+  if (!body.success || Object.keys(req.body).some(k => !["enabled", "category", "title", "message"].includes(k)))
+    fail(400, "Invalid reward configuration");
+  const value = body.data;
+  await db.insert(activityRewardConfigs).values({ childId: child(res), ...value }).onConflictDoUpdate({
+    target: activityRewardConfigs.childId, set: { ...value, updatedAt: new Date() },
+  });
+  res.json(SaveRewardConfigResponse.parse(value));
+});
 
 router.get("/activities", async (_req, res): Promise<void> => {
   res.json(GetActivityCatalogResponse.parse(await catalog(child(res))));
 });
-router.post("/activities/:activityId/runs", async (req, res): Promise<void> => {
-  const params = StartActivityRunParams.safeParse(req.params);
-  const body = StartActivityRunBody.safeParse(req.body);
-  if (!params.success || !body.success || Object.keys(req.body).some(k => !["requestId", "restart"].includes(k))) throw new HttpError(400, "Invalid run request");
-  const { activityId } = params.data;
-  const { requestId, restart } = body.data;
-  const id = child(res);
-  const result = await db.transaction(async tx => {
+async function startRun(activityId: string, requestId: string, restart: boolean | undefined, id: string) {
+  return db.transaction(async tx => {
     // Lock child to serialize starts for the same account/activity, including concurrent
     // requests carrying different request IDs. Never lock a run before checking ownership.
     await tx.execute(sql`SELECT id FROM learning_children WHERE id = ${id} FOR UPDATE`);
@@ -100,7 +143,24 @@ router.post("/activities/:activityId/runs", async (req, res): Promise<void> => {
     const [created] = await tx.insert(activityRuns).values({ id: randomUUID(), childId: id, activityId: activity.id, requestId }).returning();
     return presentRun(created, tx);
   });
+}
+router.post("/activities/:activityId/runs", async (req, res): Promise<void> => {
+  const params = StartActivityRunParams.safeParse(req.params);
+  const body = StartActivityRunBody.safeParse(req.body);
+  if (!params.success || !body.success || Object.keys(req.body).some(k => !["requestId", "restart"].includes(k))) throw new HttpError(400, "Invalid run request");
+  const result = await startRun(params.data.activityId, body.data.requestId, body.data.restart, child(res));
   res.json(StartActivityRunResponse.parse(result));
+});
+router.post("/textbooks/:bookId/pages/:pageNumber/runs", async (req, res): Promise<void> => {
+  const params = StartTextbookHomeworkParams.safeParse(req.params);
+  const body = StartTextbookHomeworkBody.safeParse(req.body);
+  if (!params.success || !body.success || Object.keys(req.body).some(k => !["requestId", "restart"].includes(k)))
+    throw new HttpError(400, "Invalid page or run request");
+  if (params.data.bookId !== book.id) fail(404, "Book not found");
+  const page = pages.find(p => p.number === params.data.pageNumber);
+  if (!page) throw new HttpError(404, "Printed page not found");
+  if (!page.questions.length) fail(400, "This page contains no homework exercises");
+  res.json(StartTextbookHomeworkResponse.parse(await startRun(activityIdForPage(page.number), body.data.requestId, body.data.restart, child(res))));
 });
 router.get("/activities/runs/:runId", async (req, res): Promise<void> => {
   const params = GetActivityRunParams.safeParse(req.params);
@@ -113,11 +173,13 @@ function checkAnswer(q: typeof activityQuestions.$inferSelect, answer: Answer): 
   const keys = Object.keys(answer);
   const expected = q.answer as Answer;
   if (q.type === "choice" || q.type === "counting" || q.type === "direct") {
-    if (keys.length !== 1 || typeof answer.value !== "string" || !/^\d{1,2}$/.test(answer.value)) throw new HttpError(400, "Expected a number answer");
+    if (keys.length !== 1 || typeof answer.value !== "string" ||
+      !(q.concept === "Shapes" ? /^(circle|rectangle|triangle)$/i.test(answer.value) : /^\d{1,2}$/.test(answer.value)))
+      throw new HttpError(400, "Expected a valid answer");
     if (q.type === "choice" && !q.options.includes(answer.value)) throw new HttpError(400, "Answer must be an option");
-    return answer.value === expected.value;
+    return answer.value.toLowerCase() === expected.value?.toLowerCase();
   }
-  if (q.type === "drag") {
+  if (q.type === "drag" || q.type === "ordering") {
     if (keys.length !== 1 || !answer.items || answer.items.length !== q.tokens.length ||
       [...answer.items].sort().join("\0") !== [...q.tokens].sort().join("\0")) throw new HttpError(400, "Expected an ordering of the provided tokens");
     return answer.items.every((item, index) => item === expected.items?.[index]);
@@ -153,19 +215,25 @@ router.post("/activities/runs/:runId/attempts", async (req, res): Promise<void> 
     const [q] = await tx.select().from(activityQuestions).where(and(eq(activityQuestions.activityId, run.activityId), eq(activityQuestions.index, run.currentIndex)));
     if (!q || q.id !== questionId) throw new HttpError(409, "Submit the current question");
     const correct = checkAnswer(q, answer);
-    const feedback = correct ? "Wonderful! You got it!" : "Not quite. Try counting the groups again!";
+    const previous = await tx.select({ id: activityAttempts.id }).from(activityAttempts)
+      .where(and(eq(activityAttempts.runId, run.id), eq(activityAttempts.questionId, q.id)));
+    const feedback = correct ? "Wonderful! You got it!" : previous.length
+      ? "Keep trying! Look carefully at each part, then try once more."
+      : "Not quite yet! Take your time and try again. Hint: count or compare each part.";
     await tx.insert(activityAttempts).values({
       id: randomUUID(), childId: id, runId: run.id, questionId: q.id, requestId,
       answer, correct, feedback,
     });
-    // Homework and practice allow retries. Exam is scored, so every submitted
-    // answer consumes one question. Completion and reward derive from this update.
-    if (correct || (await tx.select({ kind: activities.kind }).from(activities).where(eq(activities.id, run.activityId)))[0]?.kind === "exam") {
+    // All adventure steps require a correct answer; a wrong attempt is persisted
+    // but never unlocks a new location.
+    if (correct) {
       const [{ count }] = await tx.select({ count: sql<number>`count(*)::int` }).from(activityQuestions).where(eq(activityQuestions.activityId, run.activityId));
+      const [activity] = await tx.select({ kind: activities.kind }).from(activities).where(eq(activities.id, run.activityId));
+      const completed = run.currentIndex + 1 === count;
       await tx.update(activityRuns).set({
         currentIndex: run.currentIndex + 1,
         correctCount: run.correctCount + Number(correct),
-        ...(run.currentIndex + 1 === count ? { completedAt: new Date() } : {}),
+        ...(completed ? { completedAt: new Date(), ...(activity?.kind === "exam" ? { rewardSnapshot: await rewardConfig(id, tx) } : {}) } : {}),
       }).where(eq(activityRuns.id, run.id));
     }
     return { correct, feedback, run: await presentRun(await ownedRun(run.id, id, tx), tx) };

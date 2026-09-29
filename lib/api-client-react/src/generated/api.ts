@@ -25,16 +25,22 @@ import type {
   ActivityRun,
   ActivityStart,
   ActivitySummary,
+  ApiError,
   BadRequestResponse,
   ChildDashboard,
   ConflictResponse,
   CreateLearningSession201,
   HealthStatus,
+  HomeworkPhotoStatus,
   LearningState,
   LearningStateEnvelope,
   NotFoundResponse,
+  RewardConfig,
+  RewardConfigInput,
   SubmitLearningSceneAttempt200,
   SubmitLearningSceneAttemptBody,
+  Textbook,
+  TextbookPage,
   TooManyRequestsResponse,
   UnauthorizedResponse,
   UpdateLearningSceneProgressBody
@@ -66,6 +72,525 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListTextbooksUrl = () => {
+
+
+
+
+  return `/api/textbooks`
+}
+
+export const listTextbooks = async ( options?: Parameters<typeof customFetch>[1]): Promise<Textbook[]> => {
+
+  return customFetch<Textbook[]>(getListTextbooksUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTextbooksQueryKey = () => {
+    return [
+    `/api/textbooks`
+    ] as const;
+    }
+
+
+export const getListTextbooksQueryOptions = <TData = Awaited<ReturnType<typeof listTextbooks>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTextbooks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTextbooksQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTextbooks>>> = ({ signal }) => listTextbooks({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTextbooks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTextbooksQueryResult = NonNullable<Awaited<ReturnType<typeof listTextbooks>>>
+export type ListTextbooksQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useListTextbooks<TData = Awaited<ReturnType<typeof listTextbooks>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTextbooks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTextbooksQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTextbookPagesUrl = (bookId: string,) => {
+
+
+
+
+  return `/api/textbooks/${bookId}/pages`
+}
+
+export const listTextbookPages = async (bookId: string, options?: Parameters<typeof customFetch>[1]): Promise<TextbookPage[]> => {
+
+  return customFetch<TextbookPage[]>(getListTextbookPagesUrl(bookId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTextbookPagesQueryKey = (bookId: string,) => {
+    return [
+    `/api/textbooks/${bookId}/pages`
+    ] as const;
+    }
+
+
+export const getListTextbookPagesQueryOptions = <TData = Awaited<ReturnType<typeof listTextbookPages>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(bookId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTextbookPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTextbookPagesQueryKey(bookId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTextbookPages>>> = ({ signal }) => listTextbookPages(bookId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: bookId !== null && bookId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTextbookPages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTextbookPagesQueryResult = NonNullable<Awaited<ReturnType<typeof listTextbookPages>>>
+export type ListTextbookPagesQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+
+export function useListTextbookPages<TData = Awaited<ReturnType<typeof listTextbookPages>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ bookId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTextbookPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTextbookPagesQueryOptions(bookId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartTextbookHomeworkUrl = (bookId: string,
+    pageNumber: number,) => {
+
+
+
+
+  return `/api/textbooks/${bookId}/pages/${pageNumber}/runs`
+}
+
+export const startTextbookHomework = async (bookId: string,
+    pageNumber: number,
+    activityStart: ActivityStart, options?: Parameters<typeof customFetch>[1]): Promise<ActivityRun> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ActivityRun>(getStartTextbookHomeworkUrl(bookId,pageNumber),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(activityStart)
+  }
+);}
+
+
+
+
+
+export const getStartTextbookHomeworkMutationKey = () => ['startTextbookHomework'] as const;
+
+export const getStartTextbookHomeworkMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTextbookHomework>>, TError,StartTextbookHomeworkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startTextbookHomework>>, TError,StartTextbookHomeworkMutationVariables, TContext> => {
+
+const mutationKey = getStartTextbookHomeworkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startTextbookHomework>>, StartTextbookHomeworkMutationVariables> = (props) => {
+          const {bookId,pageNumber,data} = props ?? {};
+
+          return  startTextbookHomework(bookId,pageNumber,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartTextbookHomeworkMutationResult = NonNullable<Awaited<ReturnType<typeof startTextbookHomework>>>
+    export type StartTextbookHomeworkMutationBody = BodyType<ActivityStart>
+    export type StartTextbookHomeworkMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>
+    export type StartTextbookHomeworkMutationVariables = {bookId: string;pageNumber: number;data: BodyType<ActivityStart>}
+
+    export const useStartTextbookHomework = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTextbookHomework>>, TError,StartTextbookHomeworkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startTextbookHomework>>,
+        TError,
+        StartTextbookHomeworkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStartTextbookHomeworkMutationOptions(options));
+    }
+
+export const getGetHomeworkPhotoStatusUrl = () => {
+
+
+
+
+  return `/api/homework/photo/status`
+}
+
+export const getHomeworkPhotoStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<HomeworkPhotoStatus> => {
+
+  return customFetch<HomeworkPhotoStatus>(getGetHomeworkPhotoStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHomeworkPhotoStatusQueryKey = () => {
+    return [
+    `/api/homework/photo/status`
+    ] as const;
+    }
+
+
+export const getGetHomeworkPhotoStatusQueryOptions = <TData = Awaited<ReturnType<typeof getHomeworkPhotoStatus>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHomeworkPhotoStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHomeworkPhotoStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHomeworkPhotoStatus>>> = ({ signal }) => getHomeworkPhotoStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHomeworkPhotoStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHomeworkPhotoStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getHomeworkPhotoStatus>>>
+export type GetHomeworkPhotoStatusQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useGetHomeworkPhotoStatus<TData = Awaited<ReturnType<typeof getHomeworkPhotoStatus>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHomeworkPhotoStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHomeworkPhotoStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecognizeHomeworkPhotoUrl = () => {
+
+
+
+
+  return `/api/homework/photo/recognize`
+}
+
+export const recognizeHomeworkPhoto = async ( options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getRecognizeHomeworkPhotoUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRecognizeHomeworkPhotoMutationKey = () => ['recognizeHomeworkPhoto'] as const;
+
+export const getRecognizeHomeworkPhotoMutationOptions = <TError = ErrorType<UnauthorizedResponse | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recognizeHomeworkPhoto>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recognizeHomeworkPhoto>>, TError,void, TContext> => {
+
+const mutationKey = getRecognizeHomeworkPhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recognizeHomeworkPhoto>>, void> = () => {
+
+
+          return  recognizeHomeworkPhoto(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecognizeHomeworkPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof recognizeHomeworkPhoto>>>
+
+    export type RecognizeHomeworkPhotoMutationError = ErrorType<UnauthorizedResponse | ApiError>
+
+
+    export const useRecognizeHomeworkPhoto = <TError = ErrorType<UnauthorizedResponse | ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recognizeHomeworkPhoto>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recognizeHomeworkPhoto>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRecognizeHomeworkPhotoMutationOptions(options));
+    }
+
+export const getGetRewardConfigUrl = () => {
+
+
+
+
+  return `/api/reward-config`
+}
+
+export const getRewardConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<RewardConfig> => {
+
+  return customFetch<RewardConfig>(getGetRewardConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRewardConfigQueryKey = () => {
+    return [
+    `/api/reward-config`
+    ] as const;
+    }
+
+
+export const getGetRewardConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRewardConfig>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRewardConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRewardConfig>>> = ({ signal }) => getRewardConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRewardConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRewardConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getRewardConfig>>>
+export type GetRewardConfigQueryError = ErrorType<UnauthorizedResponse>
+
+
+
+export function useGetRewardConfig<TData = Awaited<ReturnType<typeof getRewardConfig>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRewardConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRewardConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveRewardConfigUrl = () => {
+
+
+
+
+  return `/api/reward-config`
+}
+
+export const saveRewardConfig = async (rewardConfigInput: RewardConfigInput, options?: Parameters<typeof customFetch>[1]): Promise<RewardConfig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RewardConfig>(getSaveRewardConfigUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rewardConfigInput)
+  }
+);}
+
+
+
+
+
+export const getSaveRewardConfigMutationKey = () => ['saveRewardConfig'] as const;
+
+export const getSaveRewardConfigMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveRewardConfig>>, TError,SaveRewardConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveRewardConfig>>, TError,SaveRewardConfigMutationVariables, TContext> => {
+
+const mutationKey = getSaveRewardConfigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveRewardConfig>>, SaveRewardConfigMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveRewardConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveRewardConfigMutationResult = NonNullable<Awaited<ReturnType<typeof saveRewardConfig>>>
+    export type SaveRewardConfigMutationBody = BodyType<RewardConfigInput>
+    export type SaveRewardConfigMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse>
+    export type SaveRewardConfigMutationVariables = {data: BodyType<RewardConfigInput>}
+
+    export const useSaveRewardConfig = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveRewardConfig>>, TError,SaveRewardConfigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveRewardConfig>>,
+        TError,
+        SaveRewardConfigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveRewardConfigMutationOptions(options));
+    }
 
 export const getGetActivityCatalogUrl = () => {
 

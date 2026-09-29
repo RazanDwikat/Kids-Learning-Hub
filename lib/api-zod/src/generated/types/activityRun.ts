@@ -8,6 +8,8 @@
 import type { ActivityFeedback } from './activityFeedback';
 import type { ActivityQuestion } from './activityQuestion';
 import type { ActivityRunKind } from './activityRunKind';
+import type { ActivitySource } from './activitySource';
+import type { RewardConfig } from './rewardConfig';
 
 export interface ActivityRun {
   id: string;
@@ -19,6 +21,9 @@ export interface ActivityRun {
   correctCount: number;
   /** @nullable */
   completedAt: Date | null;
+  source: ActivitySource | null;
+  reward: RewardConfig | null;
+  attemptCount: number;
   questions: ActivityQuestion[];
   lastFeedback: ActivityFeedback | null;
 }

@@ -15,4 +15,5 @@ export const ActivityQuestionType = {
   matching: 'matching',
   counting: 'counting',
   direct: 'direct',
+  ordering: 'ordering',
 } as const;

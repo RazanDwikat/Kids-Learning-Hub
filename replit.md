@@ -43,7 +43,8 @@ The core journey is Home → five finite full-screen vertical lesson scenes → 
 ## User preferences
 
 - Full-stack implementation includes the child Home and Profile, Grade 1 Mathematics, Homework, Practice/Exam, and same-child Parent Dashboard. Preserve the approved mobile UI and UX and the existing five-scene Addition experience.
-- OCR, AI tutoring, and new AI features remain out of scope. Future curriculum topics should be clearly unavailable, not pretend to be live.
+- Homework uses the supplied textbook's actual printed exercise pages or the camera intake flow. Camera capture and recognition integration states are in scope; automated recognition is not connected yet and must report that honestly. AI tutoring remains out of scope.
+- Exam is a retry-friendly adventure: only correct answers unlock the next stop, followed by treasure and a parent-configured reward. Do not revert it to a one-attempt scored test that advances on wrong answers. Future curriculum topics must be clearly unavailable.
 - Use an anonymous device-bound child profile for this phase; do not add sign-in or collect child personal details. Database progress survives refresh with the device credential, but clearing app storage loses access and cross-device recovery requires future account work.
 - The mobile Addition lesson uses animated scenes synchronized with bundled English narration and captions. Preserve its playback controls and saved progress; the canvas is a separate reference prototype.
 - The lesson experience is full-screen vertical content, not cards or an infinite feed. It ends after five parts.

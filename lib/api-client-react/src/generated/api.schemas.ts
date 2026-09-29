@@ -5,6 +5,58 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface Textbook {
+  id: string;
+  grade: string;
+  subject: string;
+  title: string;
+}
+
+export interface TextbookPage {
+  number: number;
+  lesson: string;
+  title: string;
+  exerciseCount: number;
+  /** @nullable */
+  activityId: string | null;
+}
+
+export interface HomeworkPhotoStatus {
+  available: boolean;
+  message: string;
+  requiresParentReview: boolean;
+}
+
+export type RewardConfigInputCategory = typeof RewardConfigInputCategory[keyof typeof RewardConfigInputCategory];
+
+
+export const RewardConfigInputCategory = {
+  activity: 'activity',
+  snack: 'snack',
+  screen_time: 'screen_time',
+  other: 'other',
+} as const;
+
+export interface RewardConfigInput {
+  enabled: boolean;
+  category: RewardConfigInputCategory;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  title: string;
+  /** @maxLength 300 */
+  message: string;
+}
+
+export type RewardConfig = RewardConfigInput;
+
+export interface ActivitySource {
+  bookId: string;
+  pageNumber: number;
+  lesson: string;
+}
+
 export type ActivitySummaryKind = typeof ActivitySummaryKind[keyof typeof ActivitySummaryKind];
 
 
@@ -53,6 +105,7 @@ export const ActivityQuestionType = {
   matching: 'matching',
   counting: 'counting',
   direct: 'direct',
+  ordering: 'ordering',
 } as const;
 
 export interface ActivityQuestion {
@@ -64,6 +117,10 @@ export interface ActivityQuestion {
   left: string[];
   right: string[];
   concept: string;
+  /** Printed textbook question number, when applicable */
+  number?: number;
+  /** Book illustration label, when applicable */
+  illustration?: string;
 }
 
 export interface ActivityFeedback {
@@ -92,6 +149,9 @@ export interface ActivityRun {
   correctCount: number;
   /** @nullable */
   completedAt: string | null;
+  source: ActivitySource | null;
+  reward: RewardConfig | null;
+  attemptCount: number;
   questions: ActivityQuestion[];
   lastFeedback: ActivityFeedback | null;
 }

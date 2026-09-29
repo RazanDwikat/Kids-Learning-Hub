@@ -8,6 +8,145 @@
 import * as zod from 'zod';
 
 
+export const ListTextbooksResponseItem = zod.object({
+  "id": zod.string(),
+  "grade": zod.string(),
+  "subject": zod.string(),
+  "title": zod.string()
+})
+export const ListTextbooksResponse = zod.array(ListTextbooksResponseItem)
+
+
+export const ListTextbookPagesParams = zod.object({
+  "bookId": zod.coerce.string()
+})
+
+export const ListTextbookPagesResponseItem = zod.object({
+  "number": zod.number().int(),
+  "lesson": zod.string(),
+  "title": zod.string(),
+  "exerciseCount": zod.number().int(),
+  "activityId": zod.string().nullable()
+})
+export const ListTextbookPagesResponse = zod.array(ListTextbookPagesResponseItem)
+
+
+export const StartTextbookHomeworkParams = zod.object({
+  "bookId": zod.coerce.string(),
+  "pageNumber": zod.coerce.number().int()
+})
+
+export const StartTextbookHomeworkBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "restart": zod.boolean().optional().describe('Required true to start a new run after completing the previous run.')
+})
+
+export const startTextbookHomeworkResponseRewardOneOneTitleMax = 100;
+
+export const startTextbookHomeworkResponseRewardOneOneMessageMax = 300;
+
+
+
+export const StartTextbookHomeworkResponse = zod.object({
+  "id": zod.string(),
+  "activityId": zod.string(),
+  "kind": zod.enum(['homework', 'practice', 'exam']),
+  "title": zod.string(),
+  "currentIndex": zod.number().int(),
+  "total": zod.number().int(),
+  "correctCount": zod.number().int(),
+  "completedAt": zod.coerce.date().nullable(),
+  "source": zod.union([zod.object({
+  "bookId": zod.string(),
+  "pageNumber": zod.number().int(),
+  "lesson": zod.string()
+}),zod.null()]),
+  "reward": zod.union([zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(startTextbookHomeworkResponseRewardOneOneTitleMax),
+  "message": zod.string().max(startTextbookHomeworkResponseRewardOneOneMessageMax)
+}),zod.null()]),
+  "attemptCount": zod.number().int(),
+  "questions": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct', 'ordering']),
+  "prompt": zod.string(),
+  "options": zod.array(zod.string()),
+  "tokens": zod.array(zod.string()),
+  "left": zod.array(zod.string()),
+  "right": zod.array(zod.string()),
+  "concept": zod.string(),
+  "number": zod.number().int().optional().describe('Printed textbook question number, when applicable'),
+  "illustration": zod.string().optional().describe('Book illustration label, when applicable')
+})),
+  "lastFeedback": zod.union([zod.object({
+  "questionId": zod.string(),
+  "correct": zod.boolean(),
+  "feedback": zod.string(),
+  "answer": zod.object({
+  "value": zod.string().optional(),
+  "items": zod.array(zod.string()).optional(),
+  "pairs": zod.array(zod.object({
+  "left": zod.string(),
+  "right": zod.string()
+})).optional()
+})
+}),zod.null()])
+})
+
+
+export const GetHomeworkPhotoStatusResponse = zod.object({
+  "available": zod.boolean(),
+  "message": zod.string(),
+  "requiresParentReview": zod.boolean()
+})
+
+
+export const RecognizeHomeworkPhotoResponse = zod.void()
+
+
+export const getRewardConfigResponseOneTitleMax = 100;
+
+export const getRewardConfigResponseOneMessageMax = 300;
+
+
+
+export const GetRewardConfigResponse = zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(getRewardConfigResponseOneTitleMax),
+  "message": zod.string().max(getRewardConfigResponseOneMessageMax)
+})
+
+
+export const saveRewardConfigBodyTitleMax = 100;
+
+export const saveRewardConfigBodyMessageMax = 300;
+
+
+
+export const SaveRewardConfigBody = zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(saveRewardConfigBodyTitleMax),
+  "message": zod.string().max(saveRewardConfigBodyMessageMax)
+})
+
+export const saveRewardConfigResponseOneTitleMax = 100;
+
+export const saveRewardConfigResponseOneMessageMax = 300;
+
+
+
+export const SaveRewardConfigResponse = zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(saveRewardConfigResponseOneTitleMax),
+  "message": zod.string().max(saveRewardConfigResponseOneMessageMax)
+})
+
+
 export const GetActivityCatalogResponseItem = zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -30,6 +169,12 @@ export const StartActivityRunBody = zod.object({
   "restart": zod.boolean().optional().describe('Required true to start a new run after completing the previous run.')
 })
 
+export const startActivityRunResponseRewardOneOneTitleMax = 100;
+
+export const startActivityRunResponseRewardOneOneMessageMax = 300;
+
+
+
 export const StartActivityRunResponse = zod.object({
   "id": zod.string(),
   "activityId": zod.string(),
@@ -39,15 +184,29 @@ export const StartActivityRunResponse = zod.object({
   "total": zod.number().int(),
   "correctCount": zod.number().int(),
   "completedAt": zod.coerce.date().nullable(),
+  "source": zod.union([zod.object({
+  "bookId": zod.string(),
+  "pageNumber": zod.number().int(),
+  "lesson": zod.string()
+}),zod.null()]),
+  "reward": zod.union([zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(startActivityRunResponseRewardOneOneTitleMax),
+  "message": zod.string().max(startActivityRunResponseRewardOneOneMessageMax)
+}),zod.null()]),
+  "attemptCount": zod.number().int(),
   "questions": zod.array(zod.object({
   "id": zod.string(),
-  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct', 'ordering']),
   "prompt": zod.string(),
   "options": zod.array(zod.string()),
   "tokens": zod.array(zod.string()),
   "left": zod.array(zod.string()),
   "right": zod.array(zod.string()),
-  "concept": zod.string()
+  "concept": zod.string(),
+  "number": zod.number().int().optional().describe('Printed textbook question number, when applicable'),
+  "illustration": zod.string().optional().describe('Book illustration label, when applicable')
 })),
   "lastFeedback": zod.union([zod.object({
   "questionId": zod.string(),
@@ -69,6 +228,12 @@ export const GetActivityRunParams = zod.object({
   "runId": zod.coerce.string().uuid()
 })
 
+export const getActivityRunResponseRewardOneOneTitleMax = 100;
+
+export const getActivityRunResponseRewardOneOneMessageMax = 300;
+
+
+
 export const GetActivityRunResponse = zod.object({
   "id": zod.string(),
   "activityId": zod.string(),
@@ -78,15 +243,29 @@ export const GetActivityRunResponse = zod.object({
   "total": zod.number().int(),
   "correctCount": zod.number().int(),
   "completedAt": zod.coerce.date().nullable(),
+  "source": zod.union([zod.object({
+  "bookId": zod.string(),
+  "pageNumber": zod.number().int(),
+  "lesson": zod.string()
+}),zod.null()]),
+  "reward": zod.union([zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(getActivityRunResponseRewardOneOneTitleMax),
+  "message": zod.string().max(getActivityRunResponseRewardOneOneMessageMax)
+}),zod.null()]),
+  "attemptCount": zod.number().int(),
   "questions": zod.array(zod.object({
   "id": zod.string(),
-  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct', 'ordering']),
   "prompt": zod.string(),
   "options": zod.array(zod.string()),
   "tokens": zod.array(zod.string()),
   "left": zod.array(zod.string()),
   "right": zod.array(zod.string()),
-  "concept": zod.string()
+  "concept": zod.string(),
+  "number": zod.number().int().optional().describe('Printed textbook question number, when applicable'),
+  "illustration": zod.string().optional().describe('Book illustration label, when applicable')
 })),
   "lastFeedback": zod.union([zod.object({
   "questionId": zod.string(),
@@ -121,6 +300,12 @@ export const SubmitActivityAttemptBody = zod.object({
 })
 })
 
+export const submitActivityAttemptResponseRunRewardOneOneTitleMax = 100;
+
+export const submitActivityAttemptResponseRunRewardOneOneMessageMax = 300;
+
+
+
 export const SubmitActivityAttemptResponse = zod.object({
   "correct": zod.boolean(),
   "feedback": zod.string(),
@@ -133,15 +318,29 @@ export const SubmitActivityAttemptResponse = zod.object({
   "total": zod.number().int(),
   "correctCount": zod.number().int(),
   "completedAt": zod.coerce.date().nullable(),
+  "source": zod.union([zod.object({
+  "bookId": zod.string(),
+  "pageNumber": zod.number().int(),
+  "lesson": zod.string()
+}),zod.null()]),
+  "reward": zod.union([zod.object({
+  "enabled": zod.boolean(),
+  "category": zod.enum(['activity', 'snack', 'screen_time', 'other']),
+  "title": zod.string().min(1).max(submitActivityAttemptResponseRunRewardOneOneTitleMax),
+  "message": zod.string().max(submitActivityAttemptResponseRunRewardOneOneMessageMax)
+}),zod.null()]),
+  "attemptCount": zod.number().int(),
   "questions": zod.array(zod.object({
   "id": zod.string(),
-  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct']),
+  "type": zod.enum(['choice', 'drag', 'matching', 'counting', 'direct', 'ordering']),
   "prompt": zod.string(),
   "options": zod.array(zod.string()),
   "tokens": zod.array(zod.string()),
   "left": zod.array(zod.string()),
   "right": zod.array(zod.string()),
-  "concept": zod.string()
+  "concept": zod.string(),
+  "number": zod.number().int().optional().describe('Printed textbook question number, when applicable'),
+  "illustration": zod.string().optional().describe('Book illustration label, when applicable')
 })),
   "lastFeedback": zod.union([zod.object({
   "questionId": zod.string(),

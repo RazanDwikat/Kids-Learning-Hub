@@ -30,6 +30,7 @@ export const activityRuns = pgTable("activity_runs", {
   currentIndex: integer("current_index").notNull().default(0),
   correctCount: integer("correct_count").notNull().default(0),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  rewardSnapshot: jsonb("reward_snapshot"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex("activity_runs_child_request").on(t.childId, t.requestId)]);
 export const activityAttempts = pgTable("activity_attempts", {
@@ -43,6 +44,17 @@ export const activityAttempts = pgTable("activity_attempts", {
   feedback: text("feedback").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex("activity_attempts_child_request").on(t.childId, t.requestId)]);
+
+export const activityRewardConfigs = pgTable("activity_reward_configs", {
+  childId: uuid("child_id").primaryKey().references(() => learningChildren.id),
+  enabled: boolean("enabled").notNull().default(false),
+  category: text("category").notNull().default("activity"),
+  title: text("title").notNull().default(""),
+  message: text("message").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export const insertActivityRewardConfigSchema = createInsertSchema(activityRewardConfigs);
+export type ActivityRewardConfig = typeof activityRewardConfigs.$inferSelect;
 
 export const insertActivitySchema = createInsertSchema(activities);
 export const insertActivityQuestionSchema = createInsertSchema(activityQuestions);

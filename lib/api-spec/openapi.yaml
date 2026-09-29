@@ -11,6 +11,106 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /textbooks:
+    get:
+      operationId: listTextbooks
+      tags: [homework]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Available real textbook editions
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Textbook" } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /textbooks/{bookId}/pages:
+    get:
+      operationId: listTextbookPages
+      tags: [homework]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/bookId" }]
+      responses:
+        "200":
+          description: Printed pages including pages without exercises
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/TextbookPage" } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /textbooks/{bookId}/pages/{pageNumber}/runs:
+    post:
+      operationId: startTextbookHomework
+      tags: [homework]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/bookId" }, { $ref: "#/components/parameters/pageNumber" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActivityStart" }
+      responses:
+        "200":
+          description: Exact page exercise run; resumes active run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityRun" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /homework/photo/status:
+    get:
+      operationId: getHomeworkPhotoStatus
+      tags: [homework]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Honest recognition capability; no extracted questions until a provider is connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeworkPhotoStatus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /homework/photo/recognize:
+    post:
+      operationId: recognizeHomeworkPhoto
+      tags: [homework]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "503":
+          description: Recognition unavailable until provider and parent review pipeline connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /reward-config:
+    get:
+      operationId: getRewardConfig
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Same-device parent-configured reward
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RewardConfig" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    put:
+      operationId: saveRewardConfig
+      tags: [activities]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RewardConfigInput" }
+      responses:
+        "200":
+          description: Saved configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RewardConfig" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /activities:
     get:
       operationId: getActivityCatalog
@@ -259,6 +359,16 @@ components:
       type: http
       scheme: bearer
   parameters:
+    bookId:
+      in: path
+      name: bookId
+      required: true
+      schema: { type: string }
+    pageNumber:
+      in: path
+      name: pageNumber
+      required: true
+      schema: { type: integer }
     activityId:
       in: path
       name: activityId
@@ -275,6 +385,49 @@ components:
       required: true
       schema: { type: string }
   schemas:
+    Textbook:
+      type: object
+      required: [id, grade, subject, title]
+      properties:
+        id: { type: string }
+        grade: { type: string }
+        subject: { type: string }
+        title: { type: string }
+    TextbookPage:
+      type: object
+      required: [number, lesson, title, exerciseCount, activityId]
+      properties:
+        number: { type: integer }
+        lesson: { type: string }
+        title: { type: string }
+        exerciseCount: { type: integer }
+        activityId: { type: ["string", "null"] }
+    HomeworkPhotoStatus:
+      type: object
+      required: [available, message, requiresParentReview]
+      properties:
+        available: { type: boolean }
+        message: { type: string }
+        requiresParentReview: { type: boolean }
+    RewardConfigInput:
+      type: object
+      additionalProperties: false
+      required: [enabled, category, title, message]
+      properties:
+        enabled: { type: boolean }
+        category: { type: string, enum: [activity, snack, screen_time, other] }
+        title: { type: string, minLength: 1, maxLength: 100 }
+        message: { type: string, maxLength: 300 }
+    RewardConfig:
+      allOf:
+        - { $ref: "#/components/schemas/RewardConfigInput" }
+    ActivitySource:
+      type: object
+      required: [bookId, pageNumber, lesson]
+      properties:
+        bookId: { type: string }
+        pageNumber: { type: integer }
+        lesson: { type: string }
     ActivitySummary:
       type: object
       required: [id, title, kind, lessonId, questionCount, completedRuns, activeRunId, bestScore]
@@ -318,7 +471,7 @@ components:
       required: [id, type, prompt, options, tokens, left, right, concept]
       properties:
         id: { type: string }
-        type: { type: string, enum: [choice, drag, matching, counting, direct] }
+        type: { type: string, enum: [choice, drag, matching, counting, direct, ordering] }
         prompt: { type: string }
         options:
           type: array
@@ -333,6 +486,8 @@ components:
           type: array
           items: { type: string }
         concept: { type: string }
+        number: { type: integer, description: "Printed textbook question number, when applicable" }
+        illustration: { type: string, description: "Book illustration label, when applicable" }
     ActivityFeedback:
       type: object
       required: [questionId, correct, feedback, answer]
@@ -343,7 +498,7 @@ components:
         answer: { $ref: "#/components/schemas/ActivityAnswer" }
     ActivityRun:
       type: object
-      required: [id, activityId, kind, title, currentIndex, total, correctCount, completedAt, questions, lastFeedback]
+      required: [id, activityId, kind, title, currentIndex, total, correctCount, completedAt, questions, lastFeedback, source, reward, attemptCount]
       properties:
         id: { type: string }
         activityId: { type: string }
@@ -353,6 +508,15 @@ components:
         total: { type: integer }
         correctCount: { type: integer }
         completedAt: { type: [string, "null"], format: date-time }
+        source:
+          oneOf:
+            - { $ref: "#/components/schemas/ActivitySource" }
+            - { type: "null" }
+        reward:
+          oneOf:
+            - { $ref: "#/components/schemas/RewardConfig" }
+            - { type: "null" }
+        attemptCount: { type: integer }
         questions:
           type: array
           items: { $ref: "#/components/schemas/ActivityQuestion" }

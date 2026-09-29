@@ -20,7 +20,8 @@ test("child-owned activities persist every answer, deduplicate retries and award
   assert.equal((await call("/activities")).status, 401);
   const catalog = await call("/activities", "GET", token);
   assert.equal(catalog.status, 200);
-  assert.deepEqual(catalog.data.map(a => a.kind).sort(), ["exam", "homework", "practice"]);
+  assert.ok(catalog.data.some(a => a.id === "addition-adventure-v2"));
+  assert.ok(catalog.data.some(a => a.id === "grade-1-math-example-book-page-4"));
   assert.equal(catalog.data.find(a => a.kind === "homework").questionCount, 5);
 
   const startId = randomUUID();
@@ -80,6 +81,6 @@ test("child-owned activities persist every answer, deduplicate retries and award
   const incorrect = await call(`/activities/runs/${exam.data.id}/attempts`, "POST", token,
     { requestId: randomUUID(), questionId: exam.data.questions[0].id, answer: { value: "4" } });
   assert.equal(incorrect.status, 200);
-  assert.equal(incorrect.data.run.currentIndex, 1, "exam advances on an incorrect scored answer");
+  assert.equal(incorrect.data.run.currentIndex, 0, "incorrect exam answer does not advance");
   assert.equal(incorrect.data.run.correctCount, 0);
 });

@@ -16,4 +16,8 @@ export interface ActivityQuestion {
   left: string[];
   right: string[];
   concept: string;
+  /** Printed textbook question number, when applicable */
+  number?: number;
+  /** Book illustration label, when applicable */
+  illustration?: string;
 }
