@@ -4,9 +4,10 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetLearningStateQueryKey, useGetLearningState, useUpdateLearningSceneProgress, useSubmitLearningSceneAttempt, useAdvanceLearningScene, useRecordLearningSceneExplanation } from '@workspace/api-client-react';
+import { getGetLearningStateQueryKey, getLearningState, useGetLearningState, useUpdateLearningSceneProgress, useSubmitLearningSceneAttempt, useAdvanceLearningScene, useRecordLearningSceneExplanation } from '@workspace/api-client-react';
 import type { LearningState } from '@workspace/api-client-react';
 import { PENDING_KEY, useLearningSession } from '@/hooks/useLearningSession';
+import { isNetworkError, learningRequestError, withRequestTimeout } from '@/hooks/learningNetwork';
 import colors from '@/constants/colors';
 
 const C = colors.light;
@@ -65,7 +66,15 @@ export default function LittleSprout() {
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? Math.max(insets.bottom, 34) : insets.bottom;
   const session = useLearningSession();
-  const query = useGetLearningState({ query: { queryKey: getGetLearningStateQueryKey(), enabled: session.ready, retry: false, staleTime: 0, refetchOnWindowFocus: false } });
+  const [retryingRead, setRetryingRead] = useState(false);
+  const query = useGetLearningState({ query: {
+    queryKey: getGetLearningStateQueryKey(),
+    queryFn: ({ signal }) => withRequestTimeout(requestSignal => getLearningState({ signal: requestSignal }), signal),
+    enabled: session.ready,
+    retry: (failures, error) => failures < 2 && isNetworkError(error),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  } });
   const cache = useQueryClient();
   const progressMutation = useUpdateLearningSceneProgress();
   const attemptMutation = useSubmitLearningSceneAttempt();
@@ -208,14 +217,22 @@ export default function LittleSprout() {
   });
   const chrome = (back: Screen, label: string) => <View style={s.topbar}><Pressable accessibilityLabel="Go back" onPress={() => go(back)} style={s.back}><Icon name="arrow-left" /></Pressable><Txt style={s.eyebrow}>{label}</Txt><View style={{ width: 42 }} /></View>;
   const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>{([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}</View>;
-  const message = (text: string, retry?: () => void) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title="Retry" onPress={retry} />}</View>;
+  const message = (text: string, retry?: () => void, retrying = false) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title={retrying ? 'Retrying…' : 'Retry'} disabled={retrying} onPress={retry} />}</View>;
   const page = (children: React.ReactNode, withNav = false) => <View style={s.root}><ScrollView contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}{pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => { setError(null); void query.refetch(); })}{saving && <Txt style={s.note}>Saving your learning…</Txt>}</ScrollView>{withNav && nav}{notice && <Pressable style={[s.hint, { position: 'absolute', bottom: bottomInset + 88, left: 25, right: 25 }]} onPress={() => setNotice(null)}><Txt style={s.hintTitle}>{notice} · Tap to close</Txt></Pressable>}</View>;
   const sectionTitle = (title: string) => <Txt style={s.sectionTitle}>{title}</Txt>;
   const feature = (background: string, heading: string, detail: string, cta: string, action: () => void) => <View style={[s.feature, { backgroundColor: background }]}><Txt style={s.pill}>✦  YOUR NEXT ADVENTURE</Txt><Txt style={s.featureTitle}>{heading}</Txt><Txt style={s.featureDetail}>{detail}</Txt><Image source={bunny} style={s.featureBunny} resizeMode="contain" /><Pressable style={s.featureCta} onPress={action}><Txt style={s.featureCtaText}>{cta}  →</Txt></Pressable></View>;
-  if (session.error) return page(message(session.error, () => void session.retry()));
+   if (session.error || session.loading && !session.ready) return page(message(session.loading ? 'Connecting to your garden…' : session.error!, () => void session.retry(), session.loading));
+  if (retryingRead) return page(message('Connecting to your garden…', () => {}, true));
   if (!session.ready || query.isPending) return page(message('Loading your garden…'));
   if (!pendingLoaded) return page(message(error ?? 'Loading your garden…', error ? loadPending : undefined));
-  if (query.error || !state) return page(message(query.error instanceof Error ? query.error.message : 'Could not load your garden.', () => void query.refetch()));
+   if (query.error || !state) return page(message(
+     query.isFetching ? 'Connecting to your garden…' : learningRequestError(query.error, 'Could not load your garden. Please retry.'),
+     () => {
+       setRetryingRead(true);
+       void query.refetch().finally(() => setRetryingRead(false));
+     },
+     query.isFetching,
+   ));
   const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === 2));
   if (screen === 'lesson' && scene) return <View style={[s.lesson, { backgroundColor: scene.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }]} onTouchStart={e => { touchStart.current = e.nativeEvent.pageY; }} onTouchEnd={e => {
     if (touchStart.current === null) return;
