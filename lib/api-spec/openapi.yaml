@@ -11,6 +11,127 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /learning/session:
+    post:
+      operationId: createLearningSession
+      tags: [learning]
+      responses:
+        "201":
+          description: New anonymous child and one-time credential
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, state]
+                properties:
+                  token: { type: string }
+                  state: { $ref: "#/components/schemas/LearningState" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /learning/state:
+    get:
+      operationId: getLearningState
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Authenticated child learning state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /learning/scenes/{sceneId}/progress:
+    patch:
+      operationId: updateLearningSceneProgress
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/sceneId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [positionPercent]
+              properties:
+                positionPercent: { type: integer, minimum: 0, maximum: 100 }
+                movedCount: { type: integer, minimum: 0, maximum: 2 }
+      responses:
+        "200":
+          description: Updated state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningStateEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /learning/scenes/{sceneId}/attempts:
+    post:
+      operationId: submitLearningSceneAttempt
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/sceneId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [requestId, answer]
+              properties:
+                requestId: { type: string, format: uuid }
+                answer: { type: integer }
+      responses:
+        "200":
+          description: Evaluated answer
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [correct, feedback, state]
+                properties:
+                  correct: { type: boolean }
+                  feedback: { type: string }
+                  state: { $ref: "#/components/schemas/LearningState" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /learning/scenes/{sceneId}/advance:
+    post:
+      operationId: advanceLearningScene
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/sceneId" }]
+      responses:
+        "200":
+          description: Advanced lesson
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningStateEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /learning/scenes/{sceneId}/explanation:
+    post:
+      operationId: recordLearningSceneExplanation
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/sceneId" }]
+      responses:
+        "200":
+          description: Help recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningStateEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
   /healthz:
     get:
       operationId: healthCheck
@@ -25,7 +146,133 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 components:
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    NotFound:
+      description: Unknown scene
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Conflict:
+      description: Lesson progression conflict or reused request ID
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    TooManyRequests:
+      description: Rate limit reached
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    sceneId:
+      in: path
+      name: sceneId
+      required: true
+      schema: { type: string }
   schemas:
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    LearningScene:
+      type: object
+      required: [id, index, title, caption, color, type, durationMs, operands, options, questionId]
+      properties:
+        id: { type: string }
+        index: { type: integer }
+        title: { type: string }
+        caption: { type: string }
+        color: { type: string }
+        type: { type: string, enum: [video, drag, choice] }
+        durationMs: { type: [integer, "null"] }
+        operands:
+          type: object
+          required: [a, b]
+          properties:
+            a: { type: integer }
+            b: { type: integer }
+        options:
+          type: array
+          items: { type: integer }
+        questionId: { type: [string, "null"] }
+    LearningState:
+      type: object
+      required: [child, grade, subject, lesson, progress, summary]
+      properties:
+        child:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        grade:
+          type: object
+          required: [id, title]
+          properties:
+            id: { type: string }
+            title: { type: string }
+        subject:
+          type: object
+          required: [id, title]
+          properties:
+            id: { type: string }
+            title: { type: string }
+        lesson:
+          type: object
+          required: [id, title, scenes]
+          properties:
+            id: { type: string }
+            title: { type: string }
+            scenes:
+              type: array
+              items: { $ref: "#/components/schemas/LearningScene" }
+        progress:
+          type: object
+          required: [currentSceneIndex, completedSceneIds, scenes, lessonCompleted, completedAt]
+          properties:
+            currentSceneIndex: { type: integer }
+            completedSceneIds:
+              type: array
+              items: { type: string }
+            scenes:
+              type: array
+              items:
+                type: object
+                required: [sceneId, positionPercent, movedCount, solved]
+                properties:
+                  sceneId: { type: string }
+                  positionPercent: { type: integer }
+                  movedCount: { type: integer }
+                  solved: { type: boolean }
+            lessonCompleted: { type: boolean }
+            completedAt: { type: [string, "null"], format: date-time }
+        summary:
+          type: object
+          required: [attempts, independent, hints, explanations]
+          properties:
+            attempts: { type: integer }
+            independent: { type: integer }
+            hints: { type: integer }
+            explanations: { type: integer }
+    LearningStateEnvelope:
+      type: object
+      required: [state]
+      properties:
+        state: { $ref: "#/components/schemas/LearningState" }
     HealthStatus:
       type: object
       properties:

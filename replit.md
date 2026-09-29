@@ -4,7 +4,8 @@ An illustrated educational companion for children aged 6–7, starting with Grad
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Start the managed `artifacts/api-server: API Server` and `artifacts/little-sprout: expo` workflows; ports are supplied by the environment.
+- `pnpm --filter @workspace/api-server test` — HTTP persistence and isolation checks against the running API and development database
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -22,22 +23,28 @@ An illustrated educational companion for children aged 6–7, starting with Grad
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/little-sprout` — approved mobile frontend and anonymous device-session handling
+- `artifacts/api-server/src/routes/learning.ts` — learning API and server-side answer validation
+- `lib/db/src/schema/learning.ts` — curriculum, child sessions, enrollment, scene progress, and attempts
+- `lib/api-spec/openapi.yaml` — API contract; regenerate clients after changes
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The server owns correctness, completion, and attempt counts. The client sends answers, never success flags.
+- Answer retries reuse their request identifier so interrupted requests cannot count twice.
+- Only scene content and learning records are persisted; bundled lesson artwork remains in the existing frontend.
 
 ## Product
 
-The current deliverable is a UI/UX prototype in two forms: a canvas design preview and an Expo mobile prototype. The complete requested brief is in `attached_assets/Pasted-I-want-to-build-a-children-s-educational-learning-platf_1790687073677.txt`.
+The project has a canvas design preview and an Expo mobile application. The mobile application's approved UI is the source of truth for the full-stack Grade 1 → Mathematics → Addition implementation. The canvas remains a separate design prototype.
 
 The core journey is Home → five finite full-screen vertical lesson scenes → lesson celebration → unlocking homework adventure → practice → parent feedback. Parent views distinguish independent answers, hints, explanations, and multiple attempts. Learning content stays tied to the school curriculum.
 
 ## User preferences
 
-- Await explicit design approval before full-product implementation.
-- Do not build a backend, database, authentication, AI, or OCR during this prototype phase.
+- Full-stack implementation is authorized only for the existing child Addition lesson: five scenes, interactions, attempts, saved video progress, and lesson completion. Preserve the approved mobile UI and UX.
+- Homework, exams, OCR, AI tutor, and parent dashboard are not part of this backend implementation. Existing entry points should not pretend these upcoming features are live.
+- Use an anonymous device-bound child profile for this phase; do not add sign-in or collect child personal details. Database progress survives refresh with the device credential, but clearing app storage loses access and cross-device recovery requires future account work.
 - The canvas lesson uses animated scenes with English browser/device narration and captions, not prerecorded video files. The native mobile prototype remains at the earlier storyboard stage until explicitly updated.
 - The lesson experience is full-screen vertical content, not cards or an infinite feed. It ends after five parts.
 - Use the supplied reference image as inspiration without copying it. Keep the child UI warm, visual, playful, and touch-friendly; keep parent feedback calm and informative.

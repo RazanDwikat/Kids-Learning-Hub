@@ -1,35 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Image } from 'react-native';
+import { Animated, AppState, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQueryClient } from '@tanstack/react-query';
+import { getGetLearningStateQueryKey, useGetLearningState, useUpdateLearningSceneProgress, useSubmitLearningSceneAttempt, useAdvanceLearningScene, useRecordLearningSceneExplanation } from '@workspace/api-client-react';
+import type { LearningState } from '@workspace/api-client-react';
+import { PENDING_KEY, useLearningSession } from '@/hooks/useLearningSession';
 import colors from '@/constants/colors';
 
 const C = colors.light;
 const bunny = require('../../assets/images/sprout-bunny.png');
 const orchard = require('../../assets/images/sprout-orchard.png');
-type Screen = 'home' | 'profile' | 'math' | 'intro' | 'lesson' | 'complete' | 'map' | 'question' | 'treasure' | 'practice' | 'practiceDone' | 'parent' | 'insights';
+type Screen = 'home' | 'profile' | 'math' | 'intro' | 'lesson' | 'complete' | 'map' | 'practice' | 'parent';
 type IconName = React.ComponentProps<typeof Feather>['name'];
-const chapters = [
-  { title: 'A little apple story', caption: 'Bunny has 2 apples. Mama brings 2 more!', color: '#dceee3' },
-  { title: 'Put them together!', caption: 'Addition makes one big group.', color: '#f9e8d4' },
-  { title: 'Your turn to help', caption: 'Move the apples over to Bunny.', color: '#eae2f2' },
-  { title: 'Count with Bunny', caption: 'How many apples altogether?', color: '#fff0c9' },
-  { title: 'Bunny’s big challenge', caption: 'One last little puzzle!', color: '#d5eddf' },
-];
-const homework = [
-  { name: 'Apple tree', a: 2, b: 1, options: [2, 3, 4] },
-  { name: 'Little bridge', a: 3, b: 2, options: [4, 5, 6] },
-  { name: 'Flower field', a: 4, b: 2, options: [5, 6, 7] },
-  { name: 'Treasure hill', a: 5, b: 3, options: [7, 8, 9] },
-];
-const tasks = [
-  { kind: 'CHOOSE AN ANSWER', title: '2 + 3 = ?', a: 2, b: 3, answer: '5', choices: ['4', '5', '6'] },
-  { kind: 'MOVE A NUMBER', title: '3 + 3 = ?', a: 3, b: 3, answer: '6', choices: ['5', '6', '7'] },
-  { kind: 'MAKE A MATCH', title: 'Match 2 + 2', a: 2, b: 2, answer: '4', choices: ['3', '4', '5'] },
-  { kind: 'COUNT THE APPLES', title: 'How many altogether?', a: 4, b: 3, answer: '7', choices: ['6', '7', '8'] },
-  { kind: 'WRITE THE ANSWER', title: '4 + 3 = ?', a: 4, b: 3, answer: '7', choices: [] },
-  { kind: 'PUT IN ORDER', title: 'Smallest to biggest', a: 0, b: 0, answer: '3,4,5', choices: ['5', '3', '4'] },
-];
 function Txt({ children, style, ...props }: React.ComponentProps<typeof Text>) {
   return <Text {...props} style={[s.body, style]}>{children}</Text>;
 }
@@ -44,19 +28,21 @@ function Button({ title, onPress, secondary = false, disabled = false, coral = f
 function Apples({ count, size = 37 }: { count: number; size?: number }) {
   return <View accessibilityLabel={`${count} apples`} style={s.apples}>{Array.from({ length: count }, (_, i) => <MaterialCommunityIcons key={i} name="food-apple" size={size} color={C.coral} style={{ marginHorizontal: -2 }} />)}</View>;
 }
-function Hint({ a, b }: { a: number; b: number }) {
-  return <View style={s.hint}><Txt style={s.hintTitle}>Almost! Let's count together.</Txt><Txt style={s.smallMuted}>Touch each apple as you count. You've got this!</Txt><Apples count={a + b} size={26} /></View>;
+function Hint({ a, b, title = "Almost! Let's count together." }: { a: number; b: number; title?: string }) {
+  return <View style={s.hint}><Txt style={s.hintTitle}>{title}</Txt><Txt style={s.smallMuted}>Touch each apple as you count. You've got this!</Txt><Apples count={a + b} size={26} /></View>;
 }
 function DragItem({ label, apple = false, onDrop }: { label?: string; apple?: boolean; onDrop: () => void }) {
   const offset = useRef(new Animated.ValueXY()).current;
   const moved = useRef(false);
+  const onDropRef = useRef(onDrop);
+  onDropRef.current = onDrop;
   const responder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderMove: (_, gesture) => { if (Math.abs(gesture.dx) + Math.abs(gesture.dy) > 8) moved.current = true; offset.setValue({ x: gesture.dx, y: gesture.dy }); },
     onPanResponderRelease: (_, gesture) => {
-      if (moved.current && (Math.abs(gesture.dx) > 45 || Math.abs(gesture.dy) > 45)) onDrop();
-      else if (!moved.current) onDrop();
+      if (moved.current && (Math.abs(gesture.dx) > 45 || Math.abs(gesture.dy) > 45)) onDropRef.current();
+      else if (!moved.current) onDropRef.current();
       moved.current = false;
       Animated.spring(offset, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
     },
@@ -68,113 +54,199 @@ function DragItem({ label, apple = false, onDrop }: { label?: string; apple?: bo
 function Metric({ value, label, tint }: { value: string | number; label: string; tint?: string }) {
   return <View style={[s.metric, tint ? { backgroundColor: tint } : null]}><Txt style={s.metricNumber}>{value}</Txt><Txt style={s.metricLabel}>{label}</Txt></View>;
 }
-function InsightRow({ title, detail, color }: { title: string; detail: string; color: string }) {
-  return <View style={s.insightRow}><View style={[s.dot, { backgroundColor: color }]} /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>{title}</Txt><Txt style={s.smallMuted}>{detail}</Txt></View></View>;
-}
+type PendingAttempt = { sceneId: string; answer: number; requestId: string };
+const requestId = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const r = Math.floor(Math.random() * 16);
+  return (c === 'x' ? r : (r & 3) | 8).toString(16);
+});
 
 export default function LittleSprout() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
   const bottomInset = Platform.OS === 'web' ? Math.max(insets.bottom, 34) : insets.bottom;
+  const session = useLearningSession();
+  const query = useGetLearningState({ query: { queryKey: getGetLearningStateQueryKey(), enabled: session.ready, retry: false, staleTime: 0, refetchOnWindowFocus: false } });
+  const cache = useQueryClient();
+  const progressMutation = useUpdateLearningSceneProgress();
+  const attemptMutation = useSubmitLearningSceneAttempt();
+  const advanceMutation = useAdvanceLearningScene();
+  const explanationMutation = useRecordLearningSceneExplanation();
   const [screen, setScreen] = useState<Screen>('home');
   const [chapter, setChapter] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [videoProgress, setVideoProgress] = useState(0);
-  const [moved, setMoved] = useState(0);
-  const [solved, setSolved] = useState(false);
-  const [lessonFinished, setLessonFinished] = useState(false);
-  const [unlocked, setUnlocked] = useState(0);
-  const [stop, setStop] = useState(0);
-  const [practiceIndex, setPracticeIndex] = useState(0);
-  const [selection, setSelection] = useState('');
-  const [order, setOrder] = useState<string[]>([]);
-  const [feedback, setFeedback] = useState(false);
-  const [assisted, setAssisted] = useState(false);
-  const [record, setRecord] = useState({ independent: 0, hints: 0, explanations: 0, attempts: 0 });
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; showApples: boolean } | null>(null);
+  const [pending, setPending] = useState<PendingAttempt | null>(null);
+  const [pendingLoaded, setPendingLoaded] = useState(false);
+  const busy = useRef(false);
   const touchStart = useRef<number | null>(null);
-  const go = (destination: Screen) => { setFeedback(false); setAssisted(false); setScreen(destination); };
-  const resetLesson = () => { setChapter(0); setMoved(0); setSolved(false); setVideoProgress(0); setPlaying(true); go('lesson'); };
-  const changeChapter = (next: number) => {
-    setFeedback(false); setAssisted(false); setSolved(false); setMoved(0); setVideoProgress(0); setPlaying(true);
-    if (next === 5) { setLessonFinished(true); setScreen('complete'); }
-    else if (next < 0) setScreen('intro');
-    else setChapter(next);
+  const position = useRef(0);
+  const sceneRef = useRef<string | null>(null);
+  const movedRef = useRef(0);
+  const [saving, setSaving] = useState(false);
+  const state = query.data;
+  const scenes = state?.lesson.scenes ?? [];
+  const scene = scenes[chapter];
+  const sceneProgress = state?.progress.scenes.find(p => p.sceneId === scene?.id);
+  const moved = sceneProgress?.movedCount ?? 0;
+  const solved = !!sceneProgress?.solved;
+  const finished = !!state?.progress.lessonCompleted;
+  const pendingNeedsRetry = !!pending && pendingLoaded;
+  const updateState = (next: LearningState) => cache.setQueryData(getGetLearningStateQueryKey(), next);
+  const fail = (e: unknown) => setError(e instanceof Error ? e.message : 'Could not save your progress. Please retry.');
+  const guarded = async (action: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true; setSaving(true); setError(null);
+    try { await action(); } catch (e) { fail(e); }
+    finally { busy.current = false; setSaving(false); }
   };
-  const answer = (value: number, correct: number, done: () => void) => {
-    setRecord(r => ({ ...r, attempts: r.attempts + 1, independent: r.independent + (value === correct && !assisted ? 1 : 0), hints: r.hints + (value !== correct ? 1 : 0) }));
-    if (value === correct) { setFeedback(false); done(); }
-    else { setFeedback(true); setAssisted(true); }
+  // Refuse to create a fresh attempt while a previous answer has an uncertain outcome.
+  const loadPending = () => {
+    setError(null);
+    AsyncStorage.getItem(PENDING_KEY).then(raw => {
+      if (raw) setPending(JSON.parse(raw) as PendingAttempt);
+      setPendingLoaded(true);
+    }).catch(fail);
   };
-  const help = () => { setFeedback(true); setAssisted(true); setRecord(r => ({ ...r, explanations: r.explanations + 1 })); };
-  const openStop = (i: number) => { if (lessonFinished && i <= unlocked && i < 4) { setStop(i); go('question'); } };
-  const finishStop = () => { setUnlocked(Math.max(unlocked, stop + 1)); if (stop === 3) go('treasure'); else go('map'); };
-  const checkPractice = () => {
-    const target = tasks[practiceIndex].answer;
-    const actual = practiceIndex === 5 ? order.join(',') : selection.trim();
-    setRecord(r => ({ ...r, attempts: r.attempts + 1, independent: r.independent + (actual === target && !assisted ? 1 : 0), hints: r.hints + (actual !== target ? 1 : 0) }));
-    if (actual !== target) { setFeedback(true); setAssisted(true); return; }
-    setFeedback(false); setAssisted(false); setSelection(''); setOrder([]);
-    if (practiceIndex === 5) go('practiceDone'); else setPracticeIndex(i => i + 1);
+  useEffect(() => { if (session.ready) loadPending(); }, [session.ready]);
+  useEffect(() => {
+    if (!state || screen !== 'lesson' || !scene || !playing || scene.type !== 'video' || videoProgress >= 100) return;
+    const interval = setInterval(() => {
+      setVideoProgress(v => { const next = Math.min(100, v + 2); position.current = next; return next; });
+    }, Math.max(100, (scene.durationMs ?? 12500) / 50));
+    return () => clearInterval(interval);
+  }, [state, screen, scene?.id, playing, videoProgress >= 100]);
+  // A single serialized write path prevents a late timer response from rewinding a newer scene.
+  const save = async () => {
+    const id = sceneRef.current;
+    if (!id) return;
+    const result = await progressMutation.mutateAsync({ sceneId: id, data: { positionPercent: Math.round(position.current), ...(scenes.find(s => s.id === id)?.type === 'drag' ? { movedCount: movedRef.current } : {}) } });
+    updateState(result.state);
   };
   useEffect(() => {
-    if (screen !== 'lesson' || !playing || videoProgress >= 100) return;
-    const id = setInterval(() => setVideoProgress(p => Math.min(100, p + 2)), 110);
-    return () => clearInterval(id);
-  }, [screen, playing, videoProgress, chapter]);
+    if (screen !== 'lesson' || !scene || !session.ready) return;
+    const interval = setInterval(() => {
+      const saved = cache.getQueryData<LearningState>(getGetLearningStateQueryKey())?.progress.scenes.find(p => p.sceneId === scene.id);
+      if (!busy.current && !error && (Math.round(position.current) !== saved?.positionPercent || (scene.type === 'drag' && movedRef.current !== saved?.movedCount))) void guarded(save);
+    }, 2500);
+    const sub = AppState.addEventListener('change', next => {
+      if (next !== 'active' && !busy.current && !error) void guarded(save);
+    });
+    return () => { clearInterval(interval); sub.remove(); };
+  }, [screen, scene?.id, session.ready, state, error]);
+  const enterStory = () => {
+    if (!state) return;
+    if (finished) { setScreen('complete'); return; }
+    const index = Math.min(state.progress.currentSceneIndex, scenes.length - 1);
+    const next = scenes[index];
+    setChapter(index); sceneRef.current = next.id;
+    const progress = state.progress.scenes.find(p => p.sceneId === next.id);
+    position.current = progress?.positionPercent ?? 0;
+    movedRef.current = progress?.movedCount ?? 0;
+    setVideoProgress(position.current); setFeedback(null); setPlaying(true); setScreen('lesson');
+  };
+  const go = (destination: Screen) => {
+    if (busy.current) return;
+    if (destination === 'map' || destination === 'practice' || destination === 'parent') { setNotice('Coming soon'); return; }
+    if (screen === 'lesson' && destination !== 'lesson') {
+      void guarded(async () => { await save(); setPlaying(false); setFeedback(null); setScreen(destination); });
+    } else { setFeedback(null); setScreen(destination); }
+  };
+  const changeChapter = (next: number) => void guarded(async () => {
+    await save();
+    if (next < 0) { setPlaying(false); setScreen('intro'); return; }
+    if (pendingNeedsRetry) throw new Error('Retry your saved answer before continuing.');
+    if (!scene || !state) return;
+    if (next > chapter && !state.progress.completedSceneIds.includes(scene.id)) {
+      const result = await advanceMutation.mutateAsync({ sceneId: scene.id });
+      updateState(result.state);
+      if (result.state.progress.lessonCompleted) { setPlaying(false); setScreen('complete'); return; }
+    }
+    if (next >= scenes.length) { setPlaying(false); setScreen('complete'); return; }
+    const target = scenes[next];
+    const saved = (cache.getQueryData<LearningState>(getGetLearningStateQueryKey()) ?? state).progress.scenes.find(p => p.sceneId === target.id);
+    sceneRef.current = target.id; position.current = saved?.positionPercent ?? 0;
+    movedRef.current = saved?.movedCount ?? 0;
+    setChapter(next); setVideoProgress(position.current); setPlaying(true); setFeedback(null);
+  });
+  const moveApple = () => void guarded(async () => {
+    if (!scene || movedRef.current >= 2) return;
+    movedRef.current += 1;
+    try { await save(); } catch (e) { movedRef.current -= 1; throw e; }
+  });
+  const sendAttempt = async (attempt: PendingAttempt) => {
+    const result = await attemptMutation.mutateAsync({ sceneId: attempt.sceneId, data: { answer: attempt.answer, requestId: attempt.requestId } });
+    updateState(result.state);
+    if (screen === 'lesson' && scene?.id === attempt.sceneId) setFeedback({ text: result.feedback, showApples: !result.correct });
+    await AsyncStorage.removeItem(PENDING_KEY);
+    setPending(null);
+  };
+  const retryPending = () => void guarded(async () => {
+    if (pending) await sendAttempt(pending);
+  });
+  const submit = (answer: number) => void guarded(async () => {
+    if (!scene || !pendingLoaded) return;
+    let attempt = pending;
+    if (attempt && (attempt.sceneId !== scene.id || attempt.answer !== answer)) {
+      setError('Your previous answer needs to be retried before trying another.');
+      return;
+    }
+    if (!attempt) {
+      attempt = { sceneId: scene.id, answer, requestId: requestId() };
+      await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(attempt));
+      setPending(attempt);
+    }
+    await sendAttempt(attempt);
+  });
+  const help = () => void guarded(async () => {
+    if (!scene) return;
+    const result = await explanationMutation.mutateAsync({ sceneId: scene.id });
+    updateState(result.state);
+    setFeedback({ text: "Let's count together.", showApples: true });
+  });
   const chrome = (back: Screen, label: string) => <View style={s.topbar}><Pressable accessibilityLabel="Go back" onPress={() => go(back)} style={s.back}><Icon name="arrow-left" /></Pressable><Txt style={s.eyebrow}>{label}</Txt><View style={{ width: 42 }} /></View>;
-  const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>
-    {([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}
-  </View>;
-  const page = (children: React.ReactNode, withNav = false, parent = false) => <View style={[s.root, parent && { backgroundColor: '#f6f5ed' }]}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}</ScrollView>{withNav && nav}</View>;
+  const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>{([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}</View>;
+  const message = (text: string, retry?: () => void) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title="Retry" onPress={retry} />}</View>;
+  const page = (children: React.ReactNode, withNav = false) => <View style={s.root}><ScrollView contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}{pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => { setError(null); void query.refetch(); })}{saving && <Txt style={s.note}>Saving your learning…</Txt>}</ScrollView>{withNav && nav}{notice && <Pressable style={[s.hint, { position: 'absolute', bottom: bottomInset + 88, left: 25, right: 25 }]} onPress={() => setNotice(null)}><Txt style={s.hintTitle}>{notice} · Tap to close</Txt></Pressable>}</View>;
   const sectionTitle = (title: string) => <Txt style={s.sectionTitle}>{title}</Txt>;
   const feature = (background: string, heading: string, detail: string, cta: string, action: () => void) => <View style={[s.feature, { backgroundColor: background }]}><Txt style={s.pill}>✦  YOUR NEXT ADVENTURE</Txt><Txt style={s.featureTitle}>{heading}</Txt><Txt style={s.featureDetail}>{detail}</Txt><Image source={bunny} style={s.featureBunny} resizeMode="contain" /><Pressable style={s.featureCta} onPress={action}><Txt style={s.featureCtaText}>{cta}  →</Txt></Pressable></View>;
-  const canNext = chapter < 2 || solved || (chapter === 2 && moved === 2);
-
-  if (screen === 'lesson') return <View style={[s.lesson, { backgroundColor: chapters[chapter].color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }]} onTouchStart={e => { touchStart.current = e.nativeEvent.pageY; }} onTouchEnd={e => {
+  if (session.error) return page(message(session.error, () => void session.retry()));
+  if (!session.ready || query.isPending) return page(message('Loading your garden…'));
+  if (!pendingLoaded) return page(message(error ?? 'Loading your garden…', error ? loadPending : undefined));
+  if (query.error || !state) return page(message(query.error instanceof Error ? query.error.message : 'Could not load your garden.', () => void query.refetch()));
+  const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === 2));
+  if (screen === 'lesson' && scene) return <View style={[s.lesson, { backgroundColor: scene.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }]} onTouchStart={e => { touchStart.current = e.nativeEvent.pageY; }} onTouchEnd={e => {
     if (touchStart.current === null) return;
     const delta = touchStart.current - e.nativeEvent.pageY; touchStart.current = null;
     if (delta > 75 && canNext) changeChapter(chapter + 1);
-    else if (delta < -75) changeChapter(chapter - 1);
+    else if (delta < -75 && chapter > 0) changeChapter(chapter - 1);
   }}>
-    <View style={s.lessonTop}><Pressable style={s.back} onPress={() => go('intro')}><Icon name="x" /></Pressable><View style={s.progressDots}>{chapters.map((_, i) => <View key={i} style={[s.progressDot, i <= chapter && { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{chapter + 1} / 5</Txt></View>
-    <View style={s.lessonHeading}><Txt style={s.eyebrow}>STORYBOARD · ADDITION</Txt><Txt style={s.lessonTitle}>{chapters[chapter].title}</Txt><Txt style={s.lessonCaption}>{chapters[chapter].caption}</Txt></View>
+    <View style={s.lessonTop}><Pressable style={s.back} onPress={() => go('intro')}><Icon name="x" /></Pressable><View style={s.progressDots}>{scenes.map((_, i) => <View key={i} style={[s.progressDot, i <= chapter && { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{chapter + 1} / {scenes.length}</Txt></View>
+    <View style={s.lessonHeading}><Txt style={s.eyebrow}>STORYBOARD · ADDITION</Txt><Txt style={s.lessonTitle}>{scene.title}</Txt><Txt style={s.lessonCaption}>{scene.caption}</Txt></View>
     <View style={s.lessonArt}>
-      {chapter === 0 && <><Image source={orchard} resizeMode="contain" style={s.orchard} /><Txt style={s.bubble}>2 + 2 = 4</Txt></>}
-      {chapter === 1 && <><View style={s.appleRow}><Apples count={2} /><Txt style={s.operator}>+</Txt><Apples count={2} /></View><Txt style={s.equation}>2 + 2 = 4</Txt><Txt style={s.bubble}>Two groups become one!</Txt></>}
-      {chapter === 2 && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={2 + moved} size={32} /><Txt style={s.operator}>←</Txt><View style={s.apples}>{Array.from({ length: 2 - moved }, (_, i) => <DragItem key={i} apple onDrop={() => setMoved(v => Math.min(2, v + 1))} />)}</View></View><Txt style={s.lessonCaption}>{moved === 2 ? 'Wonderful! 2 + 2 = 4' : 'Drag an apple left, or tap it!'}</Txt></>}
-      {chapter === 3 && <><View style={s.appleRow}><Apples count={3} /><Txt style={s.operator}>+</Txt><Apples count={2} /></View><Txt style={s.equation}>3 + 2 = ?</Txt>{feedback && <Hint a={3} b={2} />}</>}
-      {chapter === 4 && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><Txt style={s.equation}>4 + 3 = ?</Txt>{feedback && <Hint a={4} b={3} />}</>}
+      {chapter === 0 && <><Image source={orchard} resizeMode="contain" style={s.orchard} /><Txt style={s.bubble}>{scene.operands.a} + {scene.operands.b} = {scene.operands.a + scene.operands.b}</Txt></>}
+      {chapter === 1 && <><View style={s.appleRow}><Apples count={scene.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={scene.operands.b} /></View><Txt style={s.equation}>{scene.operands.a} + {scene.operands.b} = {scene.operands.a + scene.operands.b}</Txt><Txt style={s.bubble}>Two groups become one!</Txt></>}
+      {scene.type === 'drag' && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={scene.operands.a + moved} size={32} /><Txt style={s.operator}>←</Txt><View style={s.apples}>{Array.from({ length: Math.max(0, scene.operands.b - moved) }, (_, i) => <DragItem key={i} apple onDrop={moveApple} />)}</View></View><Txt style={s.lessonCaption}>{moved === scene.operands.b ? `Wonderful! ${scene.operands.a} + ${scene.operands.b} = ${scene.operands.a + scene.operands.b}` : 'Drag an apple left, or tap it!'}</Txt></>}
+      {scene.type === 'choice' && <>{chapter === 3 ? <View style={s.appleRow}><Apples count={scene.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={scene.operands.b} /></View> : <Image source={bunny} resizeMode="contain" style={s.lessonBunny} />}<Txt style={s.equation}>{scene.operands.a} + {scene.operands.b} = ?</Txt>{feedback && (feedback.showApples ? <Hint a={scene.operands.a} b={scene.operands.b} title={feedback.text} /> : <View style={s.hint}><Txt style={s.hintTitle}>{feedback.text}</Txt></View>)}</>}
     </View>
     <View style={s.lessonBottom}>
-      {(chapter === 3 || chapter === 4) && !solved && <View style={s.choices}>{(chapter === 3 ? [4, 5, 6] : [6, 7, 8]).map(n => <Pressable style={s.choice} key={n} onPress={() => answer(n, chapter === 3 ? 5 : 7, () => setSolved(true))}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
+      {scene.type === 'choice' && !solved && <View style={s.choices}>{scene.options.map(n => <Pressable disabled={saving || !!pending && pending.answer !== n} style={s.choice} key={n} onPress={() => submit(n)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
+      {scene.type === 'choice' && !solved && <Button secondary title="Show me how to count" onPress={help} disabled={saving || !!pending} icon="help-circle" />}
       {solved && <Txt style={s.pill}>✓  Yes! You counted them all.</Txt>}
-      <View style={s.controls}><Pressable accessibilityLabel={playing ? 'Pause storyboard' : 'Play storyboard'} onPress={() => setPlaying(v => !v)} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Button coral title={chapter === 4 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(chapter + 1)} disabled={!canNext} icon="arrow-right" style={{ flex: 1 }} /></View>
+      {pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => void guarded(save))}
+      {saving && <Txt style={s.swipeTip}>Saving your learning…</Txt>}
+      <View style={s.controls}><Pressable accessibilityLabel={playing ? 'Pause storyboard' : 'Play storyboard'} onPress={() => { if (playing) void guarded(async () => { await save(); setPlaying(false); }); else setPlaying(true); }} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Button coral title={chapter === scenes.length - 1 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(chapter + 1)} disabled={!canNext || saving} icon="arrow-right" style={{ flex: 1 }} /></View>
       <Txt style={s.swipeTip}>{canNext ? '↑ Swipe up or tap Next · 5 scenes only' : 'Try the activity to continue'}</Txt>
       <View style={s.track}><View style={[s.trackFill, { width: `${videoProgress}%` }]} /></View>
     </View>
   </View>;
-
-  if (screen === 'home') return page(<><View style={s.topbar}><Txt style={s.brand}>✦ little sprout<Txt style={{ color: C.coral }}>.</Txt></Txt><Pressable style={s.avatar} onPress={() => go('profile')}><Txt style={s.avatarText}>S</Txt></Pressable></View><Txt style={[s.eyebrow, { marginTop: 27 }]}>YOUR LEARNING GARDEN</Txt><Txt style={s.hero}>Hello, Sam!{'\n'}<Txt style={{ color: C.coral }}>Ready to grow?</Txt></Txt>{feature('#d9eee1', 'Let’s add\napples!', 'Grade 1 · Mathematics\nA five-scene bunny story', 'Start learning', () => go('intro'))}{sectionTitle('Pick a path')}<View style={s.tileRow}><Pressable style={[s.tile, { backgroundColor: '#f8ddd0' }]} onPress={() => go('map')}><Icon name="compass" /><Txt style={s.tileTitle}>Homework{'\n'}adventure</Txt><Txt style={s.smallMuted}>{lessonFinished ? '4 stops await' : 'Explore the trail'}</Txt></Pressable><Pressable style={[s.tile, { backgroundColor: C.lilac }]} onPress={() => go('practice')}><Icon name="star" /><Txt style={s.tileTitle}>Practice{'\n'}garden</Txt><Txt style={s.smallMuted}>6 little challenges</Txt></Pressable></View>{sectionTitle('Your school path')}<Pressable style={s.curriculum} onPress={() => go('math')}><Icon name="book-open" /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>Grade 1 Mathematics</Txt><Txt style={s.smallMuted}>We’re learning addition</Txt></View><Icon name="chevron-right" /></Pressable></>, true);
-  if (screen === 'profile') return page(<>{chrome('home', 'YOUR PROFILE')}<View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /></View><Txt style={[s.pill, { alignSelf: 'center' }]}>LITTLE LEARNER</Txt><Txt style={[s.title, s.center, { marginTop: 16 }]}>Sam’s garden</Txt><Txt style={[s.muted, s.center]}>Grade 1 · Mathematics · Addition</Txt><View style={s.metricRow}><Metric value={lessonFinished ? '5 / 5' : `${chapter} / 5`} label="Scenes seen" /><Metric value={`${unlocked} / 4`} label="Trail stops" tint="#f9e5d6" /><Metric value={`${practiceIndex} / 6`} label="Practice" tint={C.lilac} /></View><Txt style={s.note}>Illustrated storyboard prototype, not produced video. Progress stays in this session only.</Txt><Button title="Explore my learning path" onPress={() => go('math')} icon="arrow-right" /></>, true);
-  if (screen === 'math') return page(<>{chrome('home', 'GRADE 1 · MATHEMATICS')}<Txt style={[s.pill, { marginTop: 27, alignSelf: 'flex-start' }]}>YOUR SCHOOL CURRICULUM</Txt><Txt style={s.hero}>Math can be{'\n'}<Txt style={{ color: C.coral }}>an adventure.</Txt></Txt><Txt style={s.muted}>One little idea at a time. Today we’re putting groups together.</Txt>{feature('#f8e6d6', 'All about\naddition', 'Five story scenes, an adventure trail, and a practice garden.', 'Open topic', () => go('intro'))}{sectionTitle('In this topic')}{([['Meet addition', '5-scene illustrated lesson', 'intro', 'play'], ['Apple trail homework', '4 questions · unlock each stop', 'map', 'compass'], ['Practice garden', '6 ways to show what you know', 'practice', 'star']] as [string, string, Screen, IconName][]).map(([title, sub, dest, icon]) => <Pressable key={title} style={s.curriculum} onPress={() => go(dest)}><Icon name={icon} /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>{title}</Txt><Txt style={s.smallMuted}>{sub}</Txt></View><Icon name="chevron-right" /></Pressable>)}</>, true);
-  if (screen === 'intro') return page(<>{chrome('math', 'ADDITION · LESSON')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'flex-start' }]}>5 LITTLE SCENES</Txt><Txt style={s.hero}>Two apples.{'\n'}<Txt style={{ color: C.coral }}>Then two more!</Txt></Txt><Txt style={s.muted}>Join Bunny in the orchard and put two little groups together.</Txt><View style={s.celebrateArt}><Image source={bunny} style={s.celebrateBunny} resizeMode="contain" /><Txt style={[s.bubble, { position: 'absolute', bottom: 16, left: 16 }]}>2 + 2 = ?</Txt></View><Txt style={[s.pill, { alignSelf: 'flex-start', marginBottom: 15 }]}>Swipe up through 5 scenes · then the story ends</Txt><Button title="Play the story" coral icon="play" onPress={resetLesson} /><Txt style={s.note}>Interactive animated storyboard preview · not a produced video or voice recording.</Txt></>);
-  if (screen === 'complete' || screen === 'treasure' || screen === 'practiceDone') {
-    const lesson = screen === 'complete', treasure = screen === 'treasure';
-    return page(<>{chrome(lesson ? 'math' : treasure ? 'map' : 'practice', lesson ? 'LESSON COMPLETE' : treasure ? 'ADVENTURE COMPLETE' : 'PRACTICE COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>{lesson ? 'FIVE SCENES FINISHED' : treasure ? 'TREASURE FOUND' : 'SIX CHALLENGES FINISHED'}</Txt><Txt style={[s.hero, s.center]}>{lesson ? 'You did it, Sam!' : treasure ? 'What a find!' : 'Look how you’ve grown!'}</Txt><Txt style={[s.muted, s.center]}>{lesson ? 'You helped Bunny put apples together. Your homework trail is ready!' : treasure ? 'Four stops, four puzzles, one wonderful explorer.' : 'You tried six different ways to add. That is real learning.'}</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name={treasure ? 'gift' : 'award'} size={30} /></View></View><View style={s.metricRow}><Metric value={lesson ? '5 / 5' : treasure ? '4 / 4' : '6 / 6'} label={lesson ? 'Story scenes' : treasure ? 'Trail stops' : 'Practice tasks'} /><Metric value={record.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title={lesson ? 'Open homework adventure' : treasure ? 'Try the practice garden' : 'Show a grown-up'} icon="arrow-right" onPress={() => { if (lesson) go('map'); else if (treasure) { setPracticeIndex(0); go('practice'); } else go('parent'); }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
-  }
-  if (screen === 'map') return page(<>{chrome('home', 'ADDITION · HOMEWORK')}<Txt style={[s.pill, { marginTop: 23, alignSelf: 'flex-start' }]}>APPLE TRAIL</Txt><Txt style={[s.title, { marginTop: 12 }]}>A little adventure{'\n'}is waiting!</Txt><Txt style={s.muted}>{lessonFinished ? 'Solve a puzzle at each stop to find Bunny’s treasure.' : 'Finish Bunny’s five-scene story to open this trail.'}</Txt><View style={s.map}><View style={s.mapPath} />{[0, 1, 2, 3, 4].map(i => <Pressable key={i} disabled={!lessonFinished || i > unlocked} onPress={() => i === 4 ? go('treasure') : openStop(i)} style={[s.mapStop, { top: `${[7, 25, 44, 62, 79][i]}%`, left: i % 2 === 0 ? '13%' : '64%', opacity: !lessonFinished || i > unlocked ? .55 : 1, backgroundColor: lessonFinished && i === unlocked ? C.butter : C.paper }]}><Icon name={i === 4 ? 'gift' : i > unlocked || !lessonFinished ? 'lock' : i < unlocked ? 'check' : 'circle'} size={25} /><Txt style={s.mapLabel}>{i === 4 ? 'Treasure' : `Stop ${i + 1}`}</Txt></Pressable>)}</View><Txt style={s.note}>{!lessonFinished ? 'The trail unlocks when the lesson ends.' : unlocked === 4 ? 'The treasure is yours!' : `Stop ${unlocked + 1} of 4 is ready.`}</Txt><Button title={!lessonFinished ? 'Start the addition story' : unlocked === 4 ? 'See your treasure' : `Go to stop ${unlocked + 1}`} coral icon="arrow-right" onPress={() => !lessonFinished ? go('intro') : unlocked === 4 ? go('treasure') : openStop(unlocked)} /></>, true);
-  if (screen === 'question') {
-    const q = homework[stop];
-    return page(<>{chrome('map', `HOMEWORK · STOP ${stop + 1} / 4`)}<Txt style={[s.pill, { marginTop: 25, alignSelf: 'flex-start' }]}>{q.name.toUpperCase()}</Txt><Txt style={[s.title, { marginTop: 12 }]}>Help Bunny count!</Txt><Txt style={s.muted}>How many apples are there altogether?</Txt><View style={s.questionPanel}><View style={s.appleRow}><Apples count={q.a} size={32} /><Txt style={s.operator}>+</Txt><Apples count={q.b} size={32} /></View><Txt style={s.equation}>{q.a} + {q.b} = ?</Txt>{feedback && <Hint a={q.a} b={q.b} />}<View style={s.choices}>{q.options.map(n => <Pressable key={n} style={s.choice} onPress={() => answer(n, q.a + q.b, finishStop)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View></View><Button secondary title="Show me how to count" onPress={help} icon="help-circle" style={{ marginTop: 17 }} /><Txt style={s.note}>Take your time. You can try as many times as you need.</Txt></>);
-  }
-  if (screen === 'practice') {
-    const p = tasks[practiceIndex];
-    return page(<>{chrome('home', 'PRACTICE GARDEN')}<Txt style={[s.pill, { alignSelf: 'flex-start', marginTop: 20 }]}>CHALLENGE {practiceIndex + 1} OF 6</Txt><View style={[s.track, { marginTop: 17, marginBottom: 22 }]}><View style={[s.trackFill, { width: `${(practiceIndex + 1) / 6 * 100}%` }]} /></View><Txt style={s.eyebrow}>{p.kind}</Txt><Txt style={[s.title, { marginTop: 8 }]}>{p.title}</Txt><Txt style={s.muted}>{practiceIndex === 1 ? 'Drag a number into the answer spot, or tap it.' : practiceIndex === 2 ? 'Which answer matches this equation?' : practiceIndex === 5 ? 'Tap from smallest to biggest. Tap a chosen number to undo.' : 'Show Bunny what you know.'}</Txt><View style={s.practiceVisual}>{practiceIndex < 5 ? <><View style={s.appleRow}><Apples count={p.a} size={31} /><Txt style={s.operator}>+</Txt><Apples count={p.b} size={31} /></View>{practiceIndex === 1 && <Txt style={s.dropZone}>{selection || 'Drop a number here  ↑'}</Txt>}</> : <View style={s.dropZone}><Txt style={s.answerText}>{order.length ? order.join('  →  ') : 'Tap smallest first'}</Txt></View>}</View>{feedback && (practiceIndex === 5 ? <View style={s.hint}><Txt style={s.hintTitle}>Almost! Start with the smallest.</Txt><Txt style={s.smallMuted}>Look at all three numbers, then try again.</Txt></View> : <Hint a={p.a} b={p.b} />)}
-      {practiceIndex === 4 ? <TextInput value={selection} onChangeText={v => setSelection(v.replace(/[^0-9]/g, ''))} keyboardType="number-pad" maxLength={2} placeholder="?" placeholderTextColor={C.mutedForeground} style={s.answerInput} accessibilityLabel="Your answer" /> : practiceIndex === 5 ? <><View style={s.choices}>{p.choices.filter(v => !order.includes(v)).map(v => <Pressable key={v} style={s.choice} onPress={() => setOrder(o => [...o, v])}><Txt style={s.answerText}>{v}</Txt></Pressable>)}</View>{order.length > 0 && <Button secondary title="Undo last number" onPress={() => setOrder(o => o.slice(0, -1))} style={{ marginTop: 10 }} />}</> : practiceIndex === 1 ? <View style={s.choices}>{p.choices.map(v => <View key={v} style={selection === v ? s.selectedChoice : undefined}><DragItem label={v} onDrop={() => setSelection(v)} /></View>)}</View> : <View style={s.choices}>{p.choices.map(v => <Pressable key={v} onPress={() => setSelection(v)} style={[s.choice, selection === v && s.selectedChoice]}><Txt style={s.answerText}>{v}</Txt></Pressable>)}</View>}
-      <Button coral title={practiceIndex === 5 ? 'Finish practice' : 'Check my answer'} disabled={practiceIndex === 5 ? order.length !== 3 : !selection} onPress={checkPractice} icon="arrow-right" style={{ marginTop: 22 }} /><Button secondary title="I’d like a hint" icon="help-circle" onPress={help} style={{ marginTop: 12 }} /><Txt style={s.note}>Every try helps you learn.</Txt></>, true);
-  }
-  if (screen === 'parent') return page(<><View style={s.topbar}><View><Txt style={s.eyebrow}>LITTLE SPROUT · FAMILY VIEW</Txt><Txt style={s.title}>Sam’s learning</Txt></View><Pressable style={s.avatar} onPress={() => go('profile')}><Txt style={s.avatarText}>S</Txt></Pressable></View><Txt style={s.muted}>A clear look at the little steps behind the big progress.</Txt><View style={[s.parentCard, { backgroundColor: '#dcece1' }]}><Txt style={s.eyebrow}>SAMPLE FAMILY INSIGHT</Txt><Txt style={s.sectionTitle}>Addition is taking root.</Txt><Txt style={s.body}>Example: Counting on with larger sums is a good next step.</Txt></View>{sectionTitle('This session’s activity')}<View style={s.parentCard}>{[['Lesson · Putting groups together', `${lessonFinished ? 5 : chapter} of 5 scenes completed`, 'play'], ['Homework · Apple trail', `${unlocked} of 4 stops completed`, 'compass'], ['Practice · Six question styles', `${practiceIndex} of 6 tasks completed`, 'star']].map(([title, sub, icon]) => <View key={title} style={s.activity}><Icon name={icon as IconName} /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>{title}</Txt><Txt style={s.smallMuted}>{sub}</Txt></View></View>)}</View>{sectionTitle('How Sam learned')}<View style={s.metricRow}><Metric value={record.independent} label="On own" /><Metric value={record.hints} label="Hints used" tint="#f9e5d6" /><Metric value={record.attempts} label="Attempts" tint={C.lilac} /></View><View style={s.parentCard}><Txt style={s.eyebrow}>SAMPLE CONCEPT INSIGHTS</Txt><InsightRow title="Strong · Counting objects" detail="Example observation: Sam counts visible apples confidently." color="#76b394" /><InsightRow title="Growing · Sums up to 10" detail="Example next step: practice combining larger groups." color="#e4b654" /></View><Button title="Explore learning insights" icon="arrow-right" onPress={() => go('insights')} style={{ marginTop: 16 }} /><Txt style={s.note}>Concept insights are labeled examples. Activity and interaction counts above are from this session only.</Txt></>, true, true);
-  return page(<>{chrome('parent', 'LEARNING INSIGHTS')}<Txt style={[s.pill, { alignSelf: 'flex-start', marginTop: 27 }]}>A CLOSER LOOK AT SAM’S LEARNING</Txt><Txt style={[s.title, { marginTop: 14 }]}>More than a score.</Txt><Txt style={s.muted}>A sample of what a future family view could explain.</Txt><View style={s.parentCard}><Txt style={s.sectionTitle}>Sample concept insights</Txt><InsightRow title="Strong · Counting objects" detail="Example: can count and combine two small visible groups." color="#76b394" /><InsightRow title="Needs practice · Addition up to 10" detail="Example: benefits from seeing each object in 4 + 3 and 5 + 3." color="#e4b654" /><InsightRow title="Keep an eye on · Story problems" detail="Example: may need help turning a story into an equation." color={C.coral} /></View><View style={s.parentCard}><Txt style={s.sectionTitle}>How Sam solved · this session</Txt><View style={s.metricRow}><Metric value={record.independent} label="Independent" /><Metric value={record.hints} label="Hints" tint="#f9e5d6" /><Metric value={record.explanations} label="Explanations" tint={C.lilac} /></View><Txt style={[s.muted, { fontSize: 12 }]}>Across {record.attempts} attempts. Hints are part of learning, not a penalty.</Txt></View><View style={[s.parentCard, { backgroundColor: '#e2eee5' }]}><Txt style={s.sectionTitle}>Try together next · sample idea</Txt><Txt style={s.muted}>Put 4 small objects next to 3 more. Count them together and ask, “How many altogether?”</Txt></View><Button title="Back to dashboard" onPress={() => go('parent')} /><Txt style={s.note}>Concept insights are illustrative samples, not real analytics. Counts reset when the prototype reloads.</Txt></>, true, true);
+  if (screen === 'home') return page(<><View style={s.topbar}><Txt style={s.brand}>✦ little sprout<Txt style={{ color: C.coral }}>.</Txt></Txt><Pressable style={s.avatar} onPress={() => go('profile')}><Txt style={s.avatarText}>{state.child.name[0]}</Txt></Pressable></View><Txt style={[s.eyebrow, { marginTop: 27 }]}>YOUR LEARNING GARDEN</Txt><Txt style={s.hero}>Hello, {state.child.name}!{'\n'}<Txt style={{ color: C.coral }}>Ready to grow?</Txt></Txt>{feature('#d9eee1', 'Let’s add\napples!', 'Grade 1 · Mathematics\nA five-scene bunny story', 'Start learning', () => go('intro'))}{sectionTitle('Pick a path')}<View style={s.tileRow}><Pressable style={[s.tile, { backgroundColor: '#f8ddd0' }]} onPress={() => go('map')}><Icon name="compass" /><Txt style={s.tileTitle}>Homework{'\n'}adventure</Txt><Txt style={s.smallMuted}>Coming soon</Txt></Pressable><Pressable style={[s.tile, { backgroundColor: C.lilac }]} onPress={() => go('practice')}><Icon name="star" /><Txt style={s.tileTitle}>Practice{'\n'}garden</Txt><Txt style={s.smallMuted}>Coming soon</Txt></Pressable></View>{sectionTitle('Your school path')}<Pressable style={s.curriculum} onPress={() => go('math')}><Icon name="book-open" /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>Grade 1 Mathematics</Txt><Txt style={s.smallMuted}>We’re learning addition</Txt></View><Icon name="chevron-right" /></Pressable></>, true);
+  if (screen === 'profile') return page(<>{chrome('home', 'YOUR PROFILE')}<View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /></View><Txt style={[s.pill, { alignSelf: 'center' }]}>LITTLE LEARNER</Txt><Txt style={[s.title, s.center, { marginTop: 16 }]}>{state.child.name}’s garden</Txt><Txt style={[s.muted, s.center]}>Grade 1 · Mathematics · Addition</Txt><View style={s.metricRow}><Metric value={`${state.progress.completedSceneIds.length} / ${scenes.length}`} label="Scenes done" /><Metric value={state.summary.attempts} label="Attempts" tint="#f9e5d6" /><Metric value={state.summary.independent} label="On own" tint={C.lilac} /></View><Txt style={s.note}>Illustrated storyboard, not a produced video. Your learning is saved to this device profile. Keep this app’s data to return to your garden.</Txt><Button title="Explore my learning path" onPress={() => go('math')} icon="arrow-right" /></>, true);
+  if (screen === 'math') return page(<>{chrome('home', 'GRADE 1 · MATHEMATICS')}<Txt style={[s.pill, { marginTop: 27, alignSelf: 'flex-start' }]}>YOUR SCHOOL CURRICULUM</Txt><Txt style={s.hero}>Math can be{'\n'}<Txt style={{ color: C.coral }}>an adventure.</Txt></Txt><Txt style={s.muted}>One little idea at a time. Today we’re putting groups together.</Txt>{feature('#f8e6d6', 'All about\naddition', 'Five story scenes in Bunny’s orchard.', 'Open topic', () => go('intro'))}{sectionTitle('In this topic')}{([['Meet addition', '5-scene illustrated lesson', 'intro', 'play'], ['Apple trail homework', 'Coming soon', 'map', 'compass'], ['Practice garden', 'Coming soon', 'practice', 'star']] as [string, string, Screen, IconName][]).map(([title, sub, dest, icon]) => <Pressable key={title} style={s.curriculum} onPress={() => go(dest)}><Icon name={icon} /><View style={{ flex: 1 }}><Txt style={s.rowTitle}>{title}</Txt><Txt style={s.smallMuted}>{sub}</Txt></View><Icon name="chevron-right" /></Pressable>)}</>, true);
+  if (screen === 'intro') return page(<>{chrome('math', 'ADDITION · LESSON')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'flex-start' }]}>5 LITTLE SCENES</Txt><Txt style={s.hero}>Two apples.{'\n'}<Txt style={{ color: C.coral }}>Then two more!</Txt></Txt><Txt style={s.muted}>Join Bunny in the orchard and put two little groups together.</Txt><View style={s.celebrateArt}><Image source={bunny} style={s.celebrateBunny} resizeMode="contain" /><Txt style={[s.bubble, { position: 'absolute', bottom: 16, left: 16 }]}>2 + 2 = ?</Txt></View><Txt style={[s.pill, { alignSelf: 'flex-start', marginBottom: 15 }]}>Swipe up through 5 scenes · then the story ends</Txt><Button title={finished ? 'See your story' : state.progress.currentSceneIndex ? 'Resume the story' : 'Play the story'} coral icon="play" onPress={enterStory} /><Txt style={s.note}>Interactive animated storyboard preview · not a produced video or voice recording.</Txt></>);
+  return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={() => { const first = scenes[0]; const saved = state.progress.scenes.find(p => p.sceneId === first.id); sceneRef.current = first.id; position.current = saved?.positionPercent ?? 0; movedRef.current = saved?.movedCount ?? 0; setVideoProgress(position.current); setFeedback(null); setPlaying(true); setChapter(0); setScreen('lesson'); }} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
 }
 
 const s = StyleSheet.create({
