@@ -1,0 +1,97 @@
+The learning videos are currently not working as intended.
+
+The current implementation shows mostly a static image with a video/play button, but I need the lesson to feel like an actual animated educational video.
+
+Please fix the learning videos.
+
+## What I need
+
+For the story video, I want an actual animated sequence, not a static image.
+
+For example, for:
+
+**2 + 2 = 4**
+
+The video should visually tell the story:
+
+1. A cute rabbit appears.
+2. The rabbit has two apples.
+3. The rabbit looks at the two apples.
+4. The mother rabbit enters.
+5. The mother gives the rabbit two more apples.
+6. The two new apples move toward the rabbit.
+7. The child sees all four apples together.
+8. The video shows:
+   **2 + 2 = 4**
+9. The rabbit reacts happily.
+10. End with a small celebration.
+
+The characters, apples, and other elements should actually move throughout the video.
+
+I do NOT want:
+
+* A static image
+* A still illustration inside a video player
+* A fake video with only a play button
+* A slideshow that barely changes
+
+I want it to feel like a short children's animated story.
+
+## Voice narration
+
+The story must also have actual spoken narration.
+
+For example:
+
+"Meet our little bunny!"
+
+"He has two apples."
+
+"Look! His mom gave him two more apples."
+
+"Let's count them together."
+
+"One, two, three, four!"
+
+"Two plus two equals four!"
+
+The narration should play automatically when the story starts, or when the child presses play.
+
+The voice should be:
+
+* Clear
+* Friendly
+* Child-friendly
+* Slow enough for Grade 1
+* Natural
+
+Also make sure the audio actually works in the browser.
+
+The current interface has a play button, but when I play the video there is no audible narration.
+
+Please fix the actual audio playback, not just the UI.
+
+Include a working mute/unmute control.
+
+## Important
+
+All visible text and narration should be in English.
+
+Please apply the same principle to the other learning videos:
+
+**They should feel like real short animated educational videos with motion + narration**, not static screens.
+
+Keep the existing UI/UX and vertical scrolling experience.
+
+Do not redesign the application.
+
+Focus specifically on making the educational video content actually animated and audible.
+
+After implementing it, test the video in the browser and verify that:
+
+* The animation visibly moves.
+* The narration can actually be heard.
+* Play/pause works.
+* Mute/unmute works.
+* The video progresses correctly.
+* The experience works inside the existing vertical scrolling lesson.
