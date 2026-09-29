@@ -3,8 +3,8 @@ import { eq, sql } from "drizzle-orm";
 
 export const ADDITION_LESSON_ID = "addition";
 export const curriculum = [
-  { id: "addition-1", index: 0, title: "A little apple story", caption: "Bunny has 2 apples. Mama brings 2 more!", color: "#dceee3", type: "video", durationMs: 12500, a: 2, b: 2, options: [], questionId: null, answer: null },
-  { id: "addition-2", index: 1, title: "Put them together!", caption: "Addition makes one big group.", color: "#f9e8d4", type: "video", durationMs: 12500, a: 2, b: 2, options: [], questionId: null, answer: null },
+  { id: "addition-1", index: 0, title: "A little apple story", caption: "Bunny has 2 apples. Mama brings 2 more!", color: "#dceee3", type: "video", durationMs: 36830, a: 2, b: 2, options: [], questionId: null, answer: null },
+  { id: "addition-2", index: 1, title: "Put them together!", caption: "Addition makes one big group.", color: "#f9e8d4", type: "video", durationMs: 28300, a: 2, b: 2, options: [], questionId: null, answer: null },
   { id: "addition-3", index: 2, title: "Your turn to help", caption: "Move the apples over to Bunny.", color: "#eae2f2", type: "drag", durationMs: null, a: 2, b: 2, options: [], questionId: null, answer: null },
   { id: "addition-4", index: 3, title: "Count with Bunny", caption: "How many apples altogether?", color: "#fff0c9", type: "choice", durationMs: null, a: 3, b: 2, options: [4, 5, 6], questionId: "addition-q4", answer: 5 },
   { id: "addition-5", index: 4, title: "Bunny’s big challenge", caption: "One last little puzzle!", color: "#d5eddf", type: "choice", durationMs: null, a: 4, b: 3, options: [6, 7, 8], questionId: "addition-q5", answer: 7 },
@@ -20,7 +20,7 @@ export function ensureLearningReady(): Promise<void> {
     await tx.insert(learningLessons).values({ id: ADDITION_LESSON_ID, subjectId: "math", title: "Putting groups together" }).onConflictDoNothing();
     for (const scene of curriculum) {
       await tx.insert(learningScenes).values({ ...scene, lessonId: ADDITION_LESSON_ID, options: [...scene.options] })
-        .onConflictDoUpdate({ target: learningScenes.id, set: { lessonId: ADDITION_LESSON_ID } });
+        .onConflictDoUpdate({ target: learningScenes.id, set: { lessonId: ADDITION_LESSON_ID, durationMs: scene.durationMs } });
     }
     // Old child rows predate enrollment; preserve their completed work. New
     // children always receive enrollment in the session creation transaction.

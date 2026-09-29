@@ -24,7 +24,10 @@
     "web": {
       "favicon": "./assets/images/sprout-icon.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

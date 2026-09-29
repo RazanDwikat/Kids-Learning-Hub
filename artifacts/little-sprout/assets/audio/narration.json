@@ -1,0 +1,150 @@
+{
+  "story": {
+    "duration": 36.83,
+    "beats": [
+      {
+        "key": "meet",
+        "start": 0,
+        "end": 3.3,
+        "text": "Meet our little bunny in the apple orchard."
+      },
+      {
+        "key": "two",
+        "start": 3.76,
+        "end": 6.635,
+        "text": "Bunny has two shiny red apples."
+      },
+      {
+        "key": "look",
+        "start": 7.095,
+        "end": 9.62,
+        "text": "Look at those lovely apples!"
+      },
+      {
+        "key": "mother",
+        "start": 10.08,
+        "end": 13.005,
+        "text": "Here comes Bunny's mother with a smile."
+      },
+      {
+        "key": "give",
+        "start": 13.465,
+        "end": 16.04,
+        "text": "She gives Bunny two more apples."
+      },
+      {
+        "key": "together",
+        "start": 16.5,
+        "end": 19.1,
+        "text": "Let's put all the apples together."
+      },
+      {
+        "key": "count1",
+        "start": 19.56,
+        "end": 21.06,
+        "text": "One."
+      },
+      {
+        "key": "count2",
+        "start": 21.52,
+        "end": 23.07,
+        "text": "Two."
+      },
+      {
+        "key": "count3",
+        "start": 23.53,
+        "end": 25.105,
+        "text": "Three."
+      },
+      {
+        "key": "count4",
+        "start": 25.565,
+        "end": 27.09,
+        "text": "Four!"
+      },
+      {
+        "key": "equation",
+        "start": 27.55,
+        "end": 29.975,
+        "text": "Two plus two equals four."
+      },
+      {
+        "key": "happy",
+        "start": 30.435,
+        "end": 33.485,
+        "text": "Bunny is so happy with four apples!"
+      },
+      {
+        "key": "celebrate",
+        "start": 33.945,
+        "end": 36.37,
+        "text": "Hooray! We did it together!"
+      }
+    ]
+  },
+  "groups": {
+    "duration": 28.3,
+    "beats": [
+      {
+        "key": "intro",
+        "start": 0,
+        "end": 2.975,
+        "text": "Let's add apples with our bunny friend."
+      },
+      {
+        "key": "two",
+        "start": 3.435,
+        "end": 6.285,
+        "text": "Here are two apples. Look at them!"
+      },
+      {
+        "key": "more",
+        "start": 6.745,
+        "end": 9.07,
+        "text": "Here come two more apples."
+      },
+      {
+        "key": "together",
+        "start": 9.53,
+        "end": 12.28,
+        "text": "Now let's put both groups together."
+      },
+      {
+        "key": "count1",
+        "start": 12.74,
+        "end": 14.24,
+        "text": "One."
+      },
+      {
+        "key": "count2",
+        "start": 14.7,
+        "end": 16.25,
+        "text": "Two."
+      },
+      {
+        "key": "count3",
+        "start": 16.71,
+        "end": 18.285,
+        "text": "Three."
+      },
+      {
+        "key": "count4",
+        "start": 18.745,
+        "end": 20.27,
+        "text": "Four!"
+      },
+      {
+        "key": "equation",
+        "start": 20.73,
+        "end": 23.88,
+        "text": "Two plus two equals four apples."
+      },
+      {
+        "key": "celebrate",
+        "start": 24.34,
+        "end": 27.84,
+        "text": "Wonderful counting! Give yourself a cheer!"
+      }
+    ]
+  }
+}
