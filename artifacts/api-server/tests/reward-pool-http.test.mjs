@@ -99,3 +99,22 @@ test("legacy reward config migrates only once, even after option deletion", asyn
   assert.equal((await call(`/reward-options/${list[0].id}`, "DELETE", token)).status, 204);
   assert.deepEqual((await call("/reward-options", "GET", token)).data, []);
 });
+
+test("only the currently selected reward is awarded, and toggling later cannot reroll it", async () => {
+  const token = (await call("/learning/session", "POST")).data.token;
+  const options = [];
+  for (let n = 1; n <= 5; n++) {
+    options.push((await call("/reward-options", "POST", token, option(`Choice ${n}`, false))).data);
+  }
+  const chosen = options[2];
+  const { id, ...input } = chosen;
+  assert.equal((await call(`/reward-options/${id}`, "PATCH", token, { ...input, enabled: true })).status, 200);
+  const saved = (await call("/reward-options", "GET", token)).data;
+  assert.equal(saved.filter(o => o.enabled).length, 1);
+  const book = (await call("/textbooks", "GET", token)).data[0];
+  const run = (await call(`/textbooks/${book.id}/pages/8/runs`, "POST", token, { requestId: randomUUID() })).data;
+  const earned = await finish(run, token, [{ value: "circle" }, { value: "rectangle" }, { value: "triangle" }]);
+  assert.deepEqual(earned.reward, { ...input, enabled: true });
+  assert.equal((await call(`/reward-options/${id}`, "PATCH", token, input)).status, 200);
+  assert.deepEqual((await call(`/activities/runs/${run.id}`, "GET", token)).data.reward, earned.reward);
+});
