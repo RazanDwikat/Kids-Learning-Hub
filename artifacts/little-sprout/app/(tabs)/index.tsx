@@ -103,6 +103,7 @@ export default function LittleSprout() {
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const busy = useRef(false);
   const pager = useRef<ScrollView>(null);
+  const pageScroll = useRef<ScrollView>(null);
   const pageHeight = useRef(windowSize.height);
   const [viewportHeight, setViewportHeight] = useState(windowSize.height);
   const settling = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -281,7 +282,7 @@ export default function LittleSprout() {
   const chrome = (back: Screen, label: string) => <View style={s.topbar}><Pressable accessibilityLabel="Go back" onPress={() => go(back)} style={s.back}><Icon name="arrow-left" /></Pressable><Txt style={s.eyebrow}>{label}</Txt><View style={{ width: 42 }} /></View>;
   const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>{([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}</View>;
   const message = (text: string, retry?: () => void, retrying = false) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title={retrying ? 'Retrying…' : 'Retry'} disabled={retrying} onPress={retry} />}</View>;
-  const page = (children: React.ReactNode, withNav = false) => <View style={s.root}><ScrollView contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}{pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => { setError(null); void query.refetch(); })}{saving && <Txt style={s.note}>Saving your learning…</Txt>}</ScrollView>{withNav && nav}{notice && <Pressable style={[s.hint, { position: 'absolute', bottom: bottomInset + 88, left: 25, right: 25 }]} onPress={() => setNotice(null)}><Txt style={s.hintTitle}>{notice} · Tap to close</Txt></Pressable>}</View>;
+  const page = (children: React.ReactNode, withNav = false) => <View style={s.root}><ScrollView ref={pageScroll} contentContainerStyle={[s.page, { paddingTop: topInset + 15, paddingBottom: (withNav ? 85 : 30) + bottomInset }]}>{children}{pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => { setError(null); void query.refetch(); })}{saving && <Txt style={s.note}>Saving your learning…</Txt>}</ScrollView>{withNav && nav}{notice && <Pressable style={[s.hint, { position: 'absolute', bottom: bottomInset + 88, left: 25, right: 25 }]} onPress={() => setNotice(null)}><Txt style={s.hintTitle}>{notice} · Tap to close</Txt></Pressable>}</View>;
    if (session.error || session.loading && !session.ready) return page(message(session.loading ? 'Connecting to your garden…' : session.error!, () => void session.retry(), session.loading));
   if (retryingRead) return page(message('Connecting to your garden…', () => {}, true));
   if (!session.ready || query.isPending) return page(message('Loading your garden…'));
@@ -295,7 +296,7 @@ export default function LittleSprout() {
      query.isFetching,
    ));
   if (screen === 'home' || screen === 'profile' || screen === 'math' || screen === 'grade' || screen === 'parent') return page(<GardenPages key={screen} screen={screen} state={state} go={go} continueLesson={() => state.progress.currentSceneIndex || finished ? enterStory() : go('intro')} />, true);
-  if (screen === 'map' || screen === 'practice') return page(<ActivityPages key={screen} kind={screen === 'map' ? 'homework' : 'practice'} lessonComplete={finished} onLesson={() => go('intro')} onHome={() => go('home')} onParent={() => go('parent')} />, true);
+  if (screen === 'map' || screen === 'practice') return page(<ActivityPages key={screen} kind={screen === 'map' ? 'homework' : 'practice'} lessonComplete={finished} onLesson={() => go('intro')} onHome={() => go('home')} onParent={() => go('parent')} onShowMap={() => pageScroll.current?.scrollTo({ y: 0, animated: false })} />, true);
   if (screen === 'lesson' && scene) return <View style={{ flex: 1 }} onLayout={e => {
     const height = e.nativeEvent.layout.height;
     if (height && height !== pageHeight.current) {

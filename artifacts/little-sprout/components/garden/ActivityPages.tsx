@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,7 +14,7 @@ const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => 
 const pendingKey = 'sprout-activity-pending-v1';
 type Pending = { runId: string; data: ActivityAttemptInput };
 
-export function ActivityPages({ kind, onLesson, onHome, onParent }: { kind: 'homework' | 'practice'; lessonComplete: boolean; onLesson: () => void; onHome: () => void; onParent: () => void }) {
+export function ActivityPages({ kind, onLesson, onHome, onParent, onShowMap }: { kind: 'homework' | 'practice'; lessonComplete: boolean; onLesson: () => void; onHome: () => void; onParent: () => void; onShowMap?: () => void }) {
   const catalog = useGetActivityCatalog();
   const start = useStartActivityRun();
   const cache = useQueryClient();
@@ -44,7 +44,7 @@ export function ActivityPages({ kind, onLesson, onHome, onParent }: { kind: 'hom
     catch (e) { setError(e instanceof Error ? e.message : 'Could not open this adventure. Try again.'); }
     finally { lock.current = false; setStarting(false); }
   };
-  if (runId) return <RunPage runId={runId} onBack={() => setRunId(null)} onHome={onHome} onParent={onParent} />;
+  if (runId) return <RunPage key={runId} runId={runId} onBack={() => setRunId(null)} onHome={onHome} onParent={onParent} onShowMap={onShowMap} />;
   if (kind === 'homework') return <HomeworkSetup onRun={setRunId} />;
   if (catalog.isPending) return <Loading />;
   if (catalog.isError) return <Failure retry={() => void catalog.refetch()} busy={catalog.isFetching} />;
@@ -58,12 +58,14 @@ export function ActivityPages({ kind, onLesson, onHome, onParent }: { kind: 'hom
   </>;
 }
 
-function RunPage({ runId, onBack, onHome, onParent }: { runId: string; onBack: () => void; onHome: () => void; onParent: () => void }) {
+function RunPage({ runId, onBack, onHome, onParent, onShowMap }: { runId: string; onBack: () => void; onHome: () => void; onParent: () => void; onShowMap?: () => void }) {
   const query = useGetActivityRun(runId);
   const mutation = useSubmitActivityAttempt();
   const cache = useQueryClient();
   const [answer, setAnswer] = useState<ActivityAnswer>({});
   const [showMap, setShowMap] = useState(true);
+  // Only a newly confirmed answer starts a journey; server progress on reload is stationary.
+  const [transitionFrom, setTransitionFrom] = useState<number | null>(null);
   const [showReward, setShowReward] = useState(false);
   const [hint, setHint] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; correct: boolean } | null>(null);
@@ -77,10 +79,26 @@ function RunPage({ runId, onBack, onHome, onParent }: { runId: string; onBack: (
   const refresh = () => { void cache.invalidateQueries({ queryKey: getGetActivityCatalogQueryKey() }); void cache.invalidateQueries({ queryKey: getGetChildDashboardQueryKey() }); };
   const send = async (p: Pending) => {
     const result = await mutation.mutateAsync(p);
-    cache.setQueryData(getGetActivityRunQueryKey(p.runId), result.run);
+    // Keep the persisted idempotency key until removal succeeds. A failed removal
+    // (or an uncertain network response) must be retried, not animated as a new save.
     await AsyncStorage.removeItem(pendingKey);
+    const from = result.run.questions.findIndex(question => question.id === p.data.questionId);
+    if (p.runId !== runId) {
+      // Pending answers are shared across activities; confirming an older run
+      // must not animate or replace the currently open run's question.
+      setError('Your saved answer in another adventure was confirmed. You can continue here.');
+    } else if (result.correct && result.run.kind !== 'practice') {
+      setFeedback(null);
+      setHint(false);
+      setShowMap(true);
+      setTransitionFrom(from >= 0 && result.run.currentIndex > from ? from : null);
+      onShowMap?.();
+    } else {
+      setFeedback({ text: result.feedback, correct: result.correct });
+    }
+    cache.setQueryData(getGetActivityRunQueryKey(p.runId), result.run);
     setPending(null); setAnswer({});
-    setFeedback({ text: result.feedback, correct: result.correct }); refresh();
+    refresh();
   };
   const submit = async () => {
     if (lock.current || !query.data || !loaded) return;
@@ -88,7 +106,9 @@ function RunPage({ runId, onBack, onHome, onParent }: { runId: string; onBack: (
     try {
       let p = pending;
       if (!p) {
-        p = { runId, data: { questionId: query.data.questions[query.data.currentIndex].id, answer, requestId: uuid() } };
+        const question = query.data.questions[query.data.currentIndex];
+        if (!question) throw new Error('No question is available to save. Return to your activities and retry.');
+        p = { runId, data: { questionId: question.id, answer, requestId: uuid() } };
         await AsyncStorage.setItem(pendingKey, JSON.stringify(p)); setPending(p);
       }
       await send(p);
@@ -102,11 +122,11 @@ function RunPage({ runId, onBack, onHome, onParent }: { runId: string; onBack: (
   const q = run.questions[run.currentIndex];
   const valid = q?.type === 'matching' ? answer.pairs?.length === q.left.length : q?.type === 'drag' || q?.type === 'ordering' ? answer.items?.length === q.tokens.length : !!answer.value;
   const banner = <>{pending && <Card><T>An answer is waiting for confirmation. Retry it before continuing.</T><Action title={saving ? 'Saving…' : 'Retry saved answer'} disabled={saving} onPress={() => void submit()} /></Card>}{error && <T accessibilityRole="alert" style={{ color: C.coral }}>{error}</T>}</>;
-  if (feedback) return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · YOUR ANSWER</T>{feedback.correct && run.kind !== 'practice' ? <AdventureMap index={run.currentIndex} total={run.total} blocked onOpen={() => {}} /> : <Bunny />}<Card tint={feedback.correct ? C.mint : C.butter}><T style={s.heading}>{feedback.correct ? 'You found the way!' : 'Every try helps you grow.'}</T><T accessibilityLiveRegion="polite">{feedback.text}</T></Card>{banner}<Action testID="continue-after-feedback" title={run.completedAt ? 'Open the treasure' : feedback.correct ? 'Keep going' : 'Try again'} disabled={saving || !!pending} onPress={() => { setFeedback(null); setHint(false); setShowMap(feedback.correct && run.kind !== 'practice'); }} /></>;
+  if (transitionFrom !== null && run.kind !== 'practice') return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · BUNNY’S TRAIL</T><T style={s.title}>Bunny is on the move!</T><T style={s.muted}>You found the way. Follow Bunny to {run.completedAt ? 'the treasure' : 'the next stop'}.</T><Progress value={run.currentIndex} total={run.total} /><AdventureMap index={run.currentIndex} total={run.total} blocked onOpen={() => {}} transitionFrom={transitionFrom} onArrive={() => setTransitionFrom(null)} /></>;
+  if (feedback) return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · YOUR ANSWER</T><Bunny /><Card tint={feedback.correct ? C.mint : C.butter}><T style={s.heading}>{feedback.correct ? 'You found the way!' : 'Every try helps you grow.'}</T><T accessibilityLiveRegion="polite">{feedback.text}</T></Card>{banner}<Action testID="continue-after-feedback" title={run.completedAt ? 'Open the treasure' : feedback.correct ? 'Keep going' : 'Try again'} disabled={saving || !!pending} onPress={() => { setFeedback(null); setHint(false); setShowMap(feedback.correct && run.kind !== 'practice'); }} /></>;
   if (run.completedAt && showReward && run.kind !== 'practice') return <><T style={s.eyebrow}>A MOMENT TO CELEBRATE</T><T style={s.title}>{run.reward?.enabled ? run.reward.title : 'Your effort is the treasure.'}</T><TreasureCelebration /><Card tint={C.mint}><T testID="adventure-reward-message">{run.reward?.enabled ? run.reward.message : 'You kept trying and helped Bunny all the way. Tell a grown-up what you discovered!'}</T>{run.reward?.enabled && <T style={s.muted}>Chosen by your grown-up. Check with them about when to celebrate together.</T>}</Card><Action title="Show a grown-up" onPress={onParent} /><Action title="Back to my garden" secondary onPress={onHome} /><Action title="Back to results" secondary onPress={() => setShowReward(false)} /></>;
   if (run.completedAt && run.kind !== 'practice') return <><T style={s.eyebrow}>TREASURE FOUND</T><T style={s.title}>You did it!</T><T>You completed your {run.kind === 'exam' ? 'Math Adventure' : 'homework adventure'}!</T><TreasureCelebration /><View style={s.row}><Metric value={`${run.currentIndex} / ${run.total}`} label="Stops explored" /><Metric value={run.attemptCount} label="Brave tries" /></View><Card tint={C.mint}><T>Every try helped you grow. Bunny is glad you kept going.</T><T style={s.muted}>{run.title}</T></Card>{banner}<Action testID="open-adventure-reward" title="See my celebration" onPress={() => setShowReward(true)} /><Action title="Show a grown-up" onPress={onParent} /><Action title="Back to my garden" secondary onPress={onHome} /><Action title="More adventures" secondary onPress={onBack} /></>;
-  if (!run.completedAt && run.kind !== 'practice' && showMap) return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · BUNNY’S TRAIL</T><T style={s.title}>Follow Bunny to treasure.</T><T style={s.muted}>{run.title}. Each solved puzzle opens the next stop.</T><Progress value={run.currentIndex} total={run.total} /><AdventureMap index={run.currentIndex} total={run.total} blocked={!!pending} onOpen={() => setShowMap(false)} />{banner}<Action testID="open-current-stop" title={`Go to stop ${run.currentIndex + 1}`} disabled={!!pending} onPress={() => setShowMap(false)} /><Action title="Adventure overview" secondary onPress={onBack} /></>;
+  if (!run.completedAt && run.kind !== 'practice' && showMap) return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · BUNNY’S TRAIL</T><T style={s.title}>Follow Bunny to treasure.</T><T style={s.muted}>{run.title}. Each solved puzzle opens the next stop.</T><Progress value={run.currentIndex} total={run.total} /><AdventureMap index={run.currentIndex} total={run.total} blocked={!!pending || saving} onOpen={() => setShowMap(false)} />{banner}<Action testID="open-current-stop" title={`Go to stop ${run.currentIndex + 1}`} disabled={!!pending || saving} onPress={() => setShowMap(false)} /><Action title="Adventure overview" secondary onPress={onBack} /></>;
   if (run.completedAt) return <><T style={s.eyebrow}>PRACTICE COMPLETE</T><T style={s.title}>Look how you’ve grown!</T><Bunny /><View style={s.row}><Metric value={`${run.currentIndex} / ${run.total}`} label="Questions finished" /><Metric value={`${run.correctCount} / ${run.total}`} label="Correct answers" /></View>{banner}<Action title="Show a grown-up" onPress={onParent} /><Action title="Back to my garden" secondary onPress={onHome} /><Action title="More adventures" secondary onPress={onBack} /></>;
-  if (run.kind === 'homework' && showMap) return <><T style={s.eyebrow}>ADDITION · APPLE TRAIL</T><T style={s.title}>Follow Bunny’s trail.</T><T style={s.muted}>Each finished puzzle opens the next stop.</T><Progress value={run.currentIndex} total={run.total} /><View style={{ backgroundColor: C.muted, borderRadius: 30, padding: 24, gap: 12 }}>{run.questions.map((question, i) => <View key={question.id} style={{ alignItems: i % 2 ? 'flex-end' : 'flex-start' }}><Pressable testID={`homework-stop-${i + 1}`} disabled={i !== run.currentIndex || !!pending} onPress={() => setShowMap(false)} style={[s.choice, { width: 110, minHeight: 88 }, i <= run.currentIndex && s.selected]}><Feather name={i < run.currentIndex ? 'check' : i === run.currentIndex ? 'map-pin' : 'lock'} size={26} color={C.primary} /><T>Stop {i + 1}</T></Pressable></View>)}<View style={{ alignItems: 'center', padding: 15 }}><Feather name="gift" size={35} color={C.primary} /><T>Treasure</T></View></View>{banner}<Action title={`Go to stop ${run.currentIndex + 1}`} disabled={!!pending} onPress={() => setShowMap(false)} /><Action title="Homework overview" secondary onPress={onBack} /></>;
-  return <><Action title={run.kind !== 'practice' ? 'Back to trail' : 'Back to activities'} secondary onPress={() => run.kind !== 'practice' ? setShowMap(true) : onBack()} disabled={saving} /><T style={s.eyebrow}>{run.kind.toUpperCase()} · STOP {run.currentIndex + 1} OF {run.total}</T><Progress value={run.currentIndex} total={run.total} />{q ? <Question key={q.id} question={q} answer={answer} onChange={setAnswer} disabled={saving || !!pending} /> : <T>No question is available. Return to your activities and retry.</T>}{banner}<Action testID="check-activity-answer" title={saving ? 'Saving your answer…' : 'Check my answer'} disabled={!q || !valid || saving || !!pending} onPress={() => void submit()} /><Action testID="activity-hint" title={hint ? 'Hide my hint' : 'A little hint, please'} secondary onPress={() => setHint(!hint)} />{hint && <Card tint={C.butter}><T>{q?.type === 'ordering' ? 'Find the smallest number first. Which number comes next when you count?' : q?.type === 'counting' ? 'Touch each picture once. Say one number for each picture.' : q?.type === 'matching' ? 'Solve one group at a time, then find its partner.' : q?.concept?.toLowerCase().includes('shape') ? 'Think about the edges. Is it round, or does it have corners?' : q?.prompt.includes('-') ? 'Start with the first number. Take away the second number. Count what is left.' : 'Try using your fingers or little objects. Count each group slowly.'}</T></Card>}<T style={[s.muted, { textAlign: 'center', marginTop: 8 }]}>Take your time. You can try again when you need to.</T></>;
+  return <><Action title={run.kind !== 'practice' ? 'Back to trail' : 'Back to activities'} secondary onPress={() => { if (run.kind !== 'practice') { setShowMap(true); onShowMap?.(); } else onBack(); }} disabled={saving} /><T style={s.eyebrow}>{run.kind.toUpperCase()} · STOP {run.currentIndex + 1} OF {run.total}</T><Progress value={run.currentIndex} total={run.total} />{q ? <Question key={q.id} question={q} answer={answer} onChange={setAnswer} disabled={saving || !!pending} /> : <T>No question is available. Return to your activities and retry.</T>}{banner}<Action testID="check-activity-answer" title={saving ? 'Saving your answer…' : 'Check my answer'} disabled={!q || !valid || saving || !!pending} onPress={() => void submit()} /><Action testID="activity-hint" title={hint ? 'Hide my hint' : 'A little hint, please'} secondary onPress={() => setHint(!hint)} />{hint && <Card tint={C.butter}><T>{q?.type === 'ordering' ? 'Find the smallest number first. Which number comes next when you count?' : q?.type === 'counting' ? 'Touch each picture once. Say one number for each picture.' : q?.type === 'matching' ? 'Solve one group at a time, then find its partner.' : q?.concept?.toLowerCase().includes('shape') ? 'Think about the edges. Is it round, or does it have corners?' : q?.prompt.includes('-') ? 'Start with the first number. Take away the second number. Count what is left.' : 'Try using your fingers or little objects. Count each group slowly.'}</T></Card>}<T style={[s.muted, { textAlign: 'center', marginTop: 8 }]}>Take your time. You can try again when you need to.</T></>;
 }
