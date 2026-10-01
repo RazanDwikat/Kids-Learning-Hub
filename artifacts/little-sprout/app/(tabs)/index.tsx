@@ -8,6 +8,7 @@ import { getGetLearningStateQueryKey, getLearningState, useGetLearningState, use
 import type { LearningState } from '@workspace/api-client-react';
 import { PENDING_KEY, useLearningSession } from '@/hooks/useLearningSession';
 import { isNetworkError, learningRequestError, withRequestTimeout } from '@/hooks/learningNetwork';
+import { canAdvanceScene, createReviewSession, effectiveSceneProgress, reduceReviewSession, reviewCompleted, type ReviewAction, type ReviewSession, type SceneFeedback } from '@/hooks/lessonReview';
 import { useScreenHistory } from '@/hooks/useScreenHistory';
 import colors from '@/constants/colors';
 import { StoryScene } from '@/components/StoryScene';
@@ -98,7 +99,11 @@ export default function LittleSprout() {
   const [videoProgress, setVideoProgress] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ text: string; showApples: boolean } | null>(null);
+  const [feedback, setFeedback] = useState<SceneFeedback | null>(null);
+  const [review, setReview] = useState<ReviewSession | null>(null);
+  const reviewRef = useRef<ReviewSession | null>(null);
+  const [storySessionId, setStorySessionId] = useState('learning');
+  const storySessionRef = useRef('learning');
   const [pending, setPending] = useState<PendingAttempt | null>(null);
   const [pendingLoaded, setPendingLoaded] = useState(false);
   const busy = useRef(false);
@@ -107,6 +112,8 @@ export default function LittleSprout() {
   const pageHeight = useRef(windowSize.height);
   const [viewportHeight, setViewportHeight] = useState(windowSize.height);
   const settling = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const layoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restoring = useRef(false);
   const chapterRef = useRef(0);
   const position = useRef(0);
@@ -116,12 +123,21 @@ export default function LittleSprout() {
   const state = query.data;
   const scenes = state?.lesson.scenes ?? [];
   const scene = scenes[chapter];
-  const sceneProgress = state?.progress.scenes.find(p => p.sceneId === scene?.id);
-  const moved = sceneProgress?.movedCount ?? 0;
-  const solved = !!sceneProgress?.solved;
+  const sceneProgress = effectiveSceneProgress(state?.progress, review, scene?.id ?? '');
+  const moved = sceneProgress.movedCount;
+  const solved = sceneProgress.solved;
+  const sceneFeedback = review ? sceneProgress.feedback : feedback;
   const finished = !!state?.progress.lessonCompleted;
-  const pendingNeedsRetry = !!pending && pendingLoaded;
-  const updateState = (next: LearningState) => cache.setQueryData(getGetLearningStateQueryKey(), next);
+  const pendingNeedsRetry = !review && !!pending && pendingLoaded;
+  const updateState = (next: LearningState) => {
+    if (!reviewRef.current) cache.setQueryData(getGetLearningStateQueryKey(), next);
+  };
+  // Keep the ref synchronous for timer/background callbacks and quick consecutive taps.
+  const updateReview = (action: ReviewAction) => {
+    if (!reviewRef.current) return;
+    const next = reduceReviewSession(reviewRef.current, action);
+    reviewRef.current = next; setReview(next);
+  };
   const fail = (e: unknown) => setError(e instanceof Error ? e.message : 'Could not save your progress. Please retry.');
   const guarded = async (action: () => Promise<void>) => {
     if (busy.current) return;
@@ -131,6 +147,7 @@ export default function LittleSprout() {
   };
   // Refuse to create a fresh attempt while a previous answer has an uncertain outcome.
   const loadPending = () => {
+    if (reviewRef.current) return;
     setError(null);
     AsyncStorage.getItem(PENDING_KEY).then(raw => {
       if (raw) setPending(JSON.parse(raw) as PendingAttempt);
@@ -145,31 +162,57 @@ export default function LittleSprout() {
   const [mediaError, setMediaError] = useState<string | null>(null);
   // Playback position is separate from saved furthest progress (the API only accepts monotonic increases).
   const resumeRef = useRef(0);
-  const onScenePlayback = (pct: number) => { position.current = Math.max(position.current, Math.round(pct)); setVideoProgress(pct); };
-  const onSceneEnded = () => { position.current = 100; setVideoProgress(100); setPlaying(false); };
-  const resetMedia = (saved: number) => { resumeRef.current = saved >= 100 ? 0 : saved; setBlocked(false); setMediaError(null); setReplayKey(0); };
+  const isCurrentScene = () => storySessionRef.current === storySessionId && sceneRef.current === scene?.id;
+  const onScenePlayback = (pct: number) => {
+    if (!isCurrentScene()) return;
+    position.current = reviewRef.current ? Math.round(pct) : Math.max(position.current, Math.round(pct));
+    setVideoProgress(pct);
+  };
+  const onSceneEnded = () => { if (isCurrentScene()) { position.current = 100; setVideoProgress(100); setPlaying(false); } };
+  const resetMedia = (saved: number) => { resumeRef.current = saved >= 100 ? 0 : saved; setBlocked(false); setMediaError(null); setReplayKey(0); setRetryKey(0); };
+  const clearPagerTimers = () => {
+    if (settling.current) clearTimeout(settling.current);
+    if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    if (layoutTimer.current) clearTimeout(layoutTimer.current);
+    settling.current = null; restoreTimer.current = null; layoutTimer.current = null;
+    restoring.current = false;
+  };
+  const resetStorySession = (id: string) => {
+    clearPagerTimers();
+    storySessionRef.current = id; setStorySessionId(id);
+    setMuted(false); setError(null); setNotice(null); setFeedback(null);
+  };
   // A single serialized write path prevents a late timer response from rewinding a newer scene.
   const save = async () => {
     const id = sceneRef.current;
     if (!id) return;
+    if (reviewRef.current) {
+      const current = scenes.find(s => s.id === id);
+      if (current) updateReview({ type: 'progress', scene: current, positionPercent: position.current, movedCount: movedRef.current });
+      return;
+    }
     const result = await progressMutation.mutateAsync({ sceneId: id, data: { positionPercent: Math.round(position.current), ...(scenes.find(s => s.id === id)?.type === 'drag' ? { movedCount: movedRef.current } : {}) } });
     updateState(result.state);
   };
   useEffect(() => {
     if (screen !== 'lesson' || !scene || !session.ready) return;
     const interval = setInterval(() => {
+      if (reviewRef.current) { void save(); return; }
       const saved = cache.getQueryData<LearningState>(getGetLearningStateQueryKey())?.progress.scenes.find(p => p.sceneId === scene.id);
       if (!busy.current && !error && (Math.round(position.current) !== saved?.positionPercent || (scene.type === 'drag' && movedRef.current !== saved?.movedCount))) void guarded(save);
     }, 2500);
     const sub = AppState.addEventListener('change', next => {
       if (next !== 'active') setPlaying(false);
+      if (next !== 'active' && reviewRef.current) { void save(); return; }
       if (next !== 'active' && !busy.current && !error) void guarded(save);
     });
     return () => { clearInterval(interval); sub.remove(); };
-  }, [screen, scene?.id, session.ready, state, error]);
+  }, [screen, scene?.id, session.ready, state, error, storySessionId]);
   const enterStory = () => {
-    if (!state) return;
+    if (!state || busy.current) return;
     if (finished) { setScreen('complete'); return; }
+    reviewRef.current = null; setReview(null);
+    resetStorySession(requestId());
     const index = Math.min(state.progress.currentSceneIndex, scenes.length - 1);
     const next = scenes[index];
     chapterRef.current = index; setChapter(index); sceneRef.current = next.id;
@@ -178,14 +221,37 @@ export default function LittleSprout() {
     movedRef.current = progress?.movedCount ?? 0;
     resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); setScreen('lesson');
   };
+  const startReview = () => {
+    const first = scenes[0];
+    if (!first || busy.current) return;
+    const fresh = createReviewSession(scenes, requestId());
+    reviewRef.current = fresh; setReview(fresh);
+    resetStorySession(fresh.id);
+    chapterRef.current = 0; setChapter(0); sceneRef.current = first.id;
+    position.current = 0; movedRef.current = 0;
+    resetMedia(0); setVideoProgress(0); setPlaying(true); setScreen('lesson');
+  };
   const go = async (destination: Screen): Promise<boolean> => {
     if (busy.current) return false;
     if (screen === 'lesson' && destination !== 'lesson') {
       setPlaying(false);
+      clearPagerTimers();
+      if (reviewRef.current) {
+        await save(); setFeedback(null); setScreen(destination);
+        return true;
+      }
       let navigated = false;
       await guarded(async () => { await save(); setPlaying(false); setFeedback(null); setScreen(destination); navigated = true; });
       return navigated;
-    } else { setFeedback(null); setScreen(destination); return true; }
+    } else {
+      if (destination === 'lesson' && reviewRef.current) {
+        // Browser Back/Forward can return to the same replay after leaving it.
+        const saved = effectiveSceneProgress(state?.progress, reviewRef.current, sceneRef.current ?? '');
+        position.current = saved.positionPercent; movedRef.current = saved.movedCount;
+        resetMedia(position.current); setVideoProgress(resumeRef.current); setPlaying(true);
+      }
+      setFeedback(null); setScreen(destination); return true;
+    }
   };
   useScreenHistory<Screen>(screen, 'home', historyScreens, go);
   const snapTo = (index: number, animated = true) => {
@@ -193,7 +259,8 @@ export default function LittleSprout() {
     restoring.current = true;
     pager.current?.scrollTo({ y: pageHeight.current * index, animated });
     // Ignore the scroll events generated by the corrective scroll.
-    setTimeout(() => { restoring.current = false; }, animated ? 420 : 80);
+    if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    restoreTimer.current = setTimeout(() => { restoring.current = false; restoreTimer.current = null; }, animated ? 420 : 80);
   };
   useEffect(() => {
     if (screen !== 'lesson') return;
@@ -201,13 +268,31 @@ export default function LittleSprout() {
     setViewportHeight(windowSize.height);
     const frame = requestAnimationFrame(() => snapTo(chapterRef.current, false));
     return () => cancelAnimationFrame(frame);
-  }, [screen, windowSize.height]);
+  }, [screen, windowSize.height, storySessionId]);
   const changeChapter = (next: number) => {
-    if (busy.current || !scene || !state || next === chapterRef.current) return;
+    if (busy.current || !scene || !state || sceneRef.current !== scene.id || next === chapterRef.current) return;
     const from = chapterRef.current;
-    const canAdvance = !pendingNeedsRetry && (from < 2 || solved || (from === 2 && moved === scene.operands.b));
+    const currentProgress = effectiveSceneProgress(state.progress, reviewRef.current, scene.id);
+    const canAdvance = canAdvanceScene(scene, currentProgress, pendingNeedsRetry);
     if (next > from && !canAdvance) { snapTo(from); return; }
     setPlaying(false);
+    if (reviewRef.current) {
+      // Save/advance only the local replay map. Durable completion stays 5 / 5.
+      void save();
+      if (next > from) updateReview({ type: 'complete', scene });
+      if (next >= scenes.length) {
+        if (reviewCompleted(reviewRef.current)) setScreen('complete');
+        else snapTo(from);
+        return;
+      }
+      const target = scenes[next];
+      const saved = effectiveSceneProgress(state.progress, reviewRef.current, target.id);
+      sceneRef.current = target.id; position.current = saved.positionPercent;
+      movedRef.current = saved.movedCount;
+      resetMedia(position.current); chapterRef.current = next; setChapter(next);
+      setVideoProgress(resumeRef.current); setFeedback(null); snapTo(next, false); setPlaying(true);
+      return;
+    }
     void guarded(async () => {
       try {
         await save();
@@ -239,46 +324,73 @@ export default function LittleSprout() {
     if (busy.current || Math.abs(next - from) > 1) { snapTo(from); return; }
     changeChapter(next);
   };
-  useEffect(() => () => { if (settling.current) clearTimeout(settling.current); }, []);
-  const canNext = !pendingNeedsRetry && (chapter < 2 || solved || (chapter === 2 && moved === scene?.operands.b));
+  useEffect(() => () => {
+    if (settling.current) clearTimeout(settling.current);
+    if (restoreTimer.current) clearTimeout(restoreTimer.current);
+    if (layoutTimer.current) clearTimeout(layoutTimer.current);
+  }, []);
+  const canNext = canAdvanceScene(scene, sceneProgress, pendingNeedsRetry);
   // Do not put locked scenes into the scrollable content at all. A fast touch
   // fling can travel multiple pages before a settle callback gets to reject it.
   const lastVisiblePage = Math.min(scenes.length, chapter + (canNext ? 1 : 0));
-  const moveApple = () => void guarded(async () => {
-    if (!scene || movedRef.current >= 2) return;
-    movedRef.current += 1;
-    try { await save(); } catch (e) { movedRef.current -= 1; throw e; }
-  });
+  const moveApple = () => {
+    if (!scene || sceneRef.current !== scene.id || movedRef.current >= scene.operands.b) return;
+    if (reviewRef.current) {
+      movedRef.current += 1;
+      updateReview({ type: 'progress', scene, positionPercent: position.current, movedCount: movedRef.current });
+      return;
+    }
+    void guarded(async () => {
+      movedRef.current += 1;
+      try { await save(); } catch (e) { movedRef.current -= 1; throw e; }
+    });
+  };
   const sendAttempt = async (attempt: PendingAttempt) => {
+    if (reviewRef.current) return;
     const result = await attemptMutation.mutateAsync({ sceneId: attempt.sceneId, data: { answer: attempt.answer, requestId: attempt.requestId } });
     updateState(result.state);
     if (screen === 'lesson' && scene?.id === attempt.sceneId) setFeedback({ text: result.feedback, showApples: !result.correct });
     await AsyncStorage.removeItem(PENDING_KEY);
     setPending(null);
   };
-  const retryPending = () => void guarded(async () => {
-    if (pending) await sendAttempt(pending);
-  });
-  const submit = (answer: number) => void guarded(async () => {
-    if (!scene || !pendingLoaded) return;
-    let attempt = pending;
-    if (attempt && (attempt.sceneId !== scene.id || attempt.answer !== answer)) {
-      setError('Your previous answer needs to be retried before trying another.');
+  const retryPending = () => {
+    if (reviewRef.current) return;
+    void guarded(async () => { if (pending) await sendAttempt(pending); });
+  };
+  const submit = (answer: number) => {
+    if (sceneRef.current !== scene?.id) return;
+    if (reviewRef.current) {
+      if (scene) updateReview({ type: 'answer', scene, answer });
       return;
     }
-    if (!attempt) {
-      attempt = { sceneId: scene.id, answer, requestId: requestId() };
-      await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(attempt));
-      setPending(attempt);
+    void guarded(async () => {
+      if (!scene || !pendingLoaded) return;
+      let attempt = pending;
+      if (attempt && (attempt.sceneId !== scene.id || attempt.answer !== answer)) {
+        setError('Your previous answer needs to be retried before trying another.');
+        return;
+      }
+      if (!attempt) {
+        attempt = { sceneId: scene.id, answer, requestId: requestId() };
+        await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(attempt));
+        setPending(attempt);
+      }
+      await sendAttempt(attempt);
+    });
+  };
+  const help = () => {
+    if (sceneRef.current !== scene?.id) return;
+    if (reviewRef.current) {
+      if (scene) updateReview({ type: 'help', scene });
+      return;
     }
-    await sendAttempt(attempt);
-  });
-  const help = () => void guarded(async () => {
-    if (!scene) return;
-    const result = await explanationMutation.mutateAsync({ sceneId: scene.id });
-    updateState(result.state);
-    setFeedback({ text: "Let's count together.", showApples: true });
-  });
+    void guarded(async () => {
+      if (!scene) return;
+      const result = await explanationMutation.mutateAsync({ sceneId: scene.id });
+      updateState(result.state);
+      setFeedback({ text: "Let's count together.", showApples: true });
+    });
+  };
   const chrome = (back: Screen, label: string) => <View style={s.topbar}><Pressable accessibilityLabel="Go back" onPress={() => go(back)} style={s.back}><Icon name="arrow-left" /></Pressable><Txt style={s.eyebrow}>{label}</Txt><View style={{ width: 42 }} /></View>;
   const nav = <View style={[s.nav, { paddingBottom: bottomInset, height: 65 + bottomInset }]}>{([['home', 'home', 'Home'], ['math', 'book-open', 'Learn'], ['map', 'compass', 'Homework'], ['practice', 'star', 'Practice'], ['parent', 'user', 'Grown-up']] as [Screen, IconName, string][]).map(([dest, icon, label]) => <Pressable key={dest} onPress={() => go(dest)} style={s.navItem}><Icon name={icon} size={20} color={screen === dest ? C.primary : C.mutedForeground} /><Txt style={[s.navLabel, screen === dest && { color: C.primary }]}>{label}</Txt></Pressable>)}</View>;
   const message = (text: string, retry?: () => void, retrying = false) => <View style={[s.hint, { marginVertical: 12 }]}><Txt style={s.hintTitle}>{text}</Txt>{retry && <Button secondary title={retrying ? 'Retrying…' : 'Retry'} disabled={retrying} onPress={retry} />}</View>;
@@ -297,12 +409,13 @@ export default function LittleSprout() {
    ));
   if (screen === 'home' || screen === 'profile' || screen === 'math' || screen === 'grade' || screen === 'parent') return page(<GardenPages key={screen} screen={screen} state={state} go={go} continueLesson={() => state.progress.currentSceneIndex || finished ? enterStory() : go('intro')} />, true);
   if (screen === 'map' || screen === 'practice') return page(<ActivityPages key={screen} kind={screen === 'map' ? 'homework' : 'practice'} lessonComplete={finished} onLesson={() => go('intro')} onHome={() => go('home')} onParent={() => go('parent')} onShowMap={() => pageScroll.current?.scrollTo({ y: 0, animated: false })} />, true);
-  if (screen === 'lesson' && scene) return <View style={{ flex: 1 }} onLayout={e => {
+   if (screen === 'lesson' && scene) return <View key={storySessionId} style={{ flex: 1 }} onLayout={e => {
     const height = e.nativeEvent.layout.height;
     if (height && height !== pageHeight.current) {
       pageHeight.current = height; setViewportHeight(height);
       // Resume directly at the saved page, not at the first frame of page one.
-      setTimeout(() => snapTo(chapterRef.current, false), 0);
+       if (layoutTimer.current) clearTimeout(layoutTimer.current);
+       layoutTimer.current = setTimeout(() => { snapTo(chapterRef.current, false); layoutTimer.current = null; }, 0);
     }
   }}>
     <ScrollView ref={pager} testID="lesson-pages" style={[{ flex: 1 }, Platform.OS === 'web' && { scrollSnapType: 'y mandatory', overscrollBehaviorY: 'contain', userSelect: 'none', WebkitUserSelect: 'none' } as any]}
@@ -335,31 +448,31 @@ export default function LittleSprout() {
       if (i > lastVisiblePage) return null;
       const active = i === chapter;
       const video = item.type === 'video' && i < 2;
-      const itemProgress = state.progress.scenes.find(p => p.sceneId === item.id);
-      const itemMoved = active ? moved : (itemProgress?.movedCount ?? 0);
+       const itemProgress = effectiveSceneProgress(state.progress, review, item.id);
+       const itemMoved = active ? moved : itemProgress.movedCount;
       return <View key={item.id} testID={`lesson-page-${i + 1}`} style={[s.lesson, { height: viewportHeight || undefined, flexGrow: 0, flexShrink: 0, backgroundColor: item.color, paddingTop: topInset + 10, paddingBottom: bottomInset + 13 }, Platform.OS === 'web' && { scrollSnapAlign: 'start', scrollSnapStop: 'always' } as any]}>
      <View style={s.lessonTop}><Pressable style={s.back} onPress={() => go('intro')}><Icon name="x" /></Pressable><View style={s.progressDots}>{scenes.map((_, dot) => <View key={dot} style={[s.progressDot, dot <= i && { backgroundColor: C.primary }]} />)}</View><Txt style={s.countBadge}>{i + 1} / {scenes.length}</Txt></View>
      <View style={s.lessonHeading}><Txt style={s.eyebrow}>{video ? 'WATCH & LEARN · ADDITION' : 'YOUR TURN · ADDITION'}</Txt><Txt style={s.lessonTitle}>{item.title}</Txt>{!video && <Txt style={s.lessonCaption}>{item.caption}</Txt>}</View>
      <View style={s.lessonArt}>
-       {video && active && <StoryScene kind={i === 0 ? 'story' : 'groups'} key={item.id} playing={playing} muted={muted} resumePercent={resumeRef.current} replayKey={replayKey} retryKey={retryKey} blocked={blocked}
+        {video && active && <StoryScene kind={i === 0 ? 'story' : 'groups'} key={`${storySessionId}:${item.id}`} playing={playing} muted={muted} resumePercent={resumeRef.current} replayKey={replayKey} retryKey={retryKey} blocked={blocked}
         onProgress={onScenePlayback} onEnded={onSceneEnded}
-        onBlocked={() => { setPlaying(false); setBlocked(true); }}
-        onError={() => { setPlaying(false); setMediaError('The story sound could not play. Check your connection and retry.'); }}
-        onRetry={() => { setBlocked(false); setPlaying(true); }} />}
+         onBlocked={() => { if (isCurrentScene()) { setPlaying(false); setBlocked(true); } }}
+         onError={() => { if (isCurrentScene()) { setPlaying(false); setMediaError('The story sound could not play. Check your connection and retry.'); } }}
+         onRetry={() => { if (isCurrentScene()) { setBlocked(false); setPlaying(true); } }} />}
        {video && !active && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={item.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={item.operands.b} /></View><Txt style={s.lessonCaption}>{item.caption}</Txt></>}
        {video && active && mediaError && message(mediaError, () => { setMediaError(null); setBlocked(false); setRetryKey(k => k + 1); setPlaying(true); })}
        {item.type === 'drag' && <><Image source={bunny} resizeMode="contain" style={s.lessonBunny} /><View style={s.appleRow}><Apples count={item.operands.a + itemMoved} size={32} /><Txt style={s.operator}>←</Txt><View style={s.apples}>{Array.from({ length: Math.max(0, item.operands.b - itemMoved) }, (_, appleIndex) => active ? <DragItem key={appleIndex} apple onDrop={moveApple} /> : <MaterialCommunityIcons key={appleIndex} name="food-apple" size={37} color={C.coral} />)}</View></View><Txt style={s.lessonCaption}>{itemMoved === item.operands.b ? `Wonderful! ${item.operands.a} + ${item.operands.b} = ${item.operands.a + item.operands.b}` : 'Drag an apple left, or tap it!'}</Txt></>}
-       {item.type === 'choice' && <>{i === 3 ? <View style={s.appleRow}><Apples count={item.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={item.operands.b} /></View> : <Image source={bunny} resizeMode="contain" style={s.lessonBunny} />}<Txt style={s.equation}>{item.operands.a} + {item.operands.b} = ?</Txt>{active && feedback && (feedback.showApples ? <Hint a={item.operands.a} b={item.operands.b} title={feedback.text} /> : <View style={s.hint}><Txt style={s.hintTitle}>{feedback.text}</Txt></View>)}</>}
+        {item.type === 'choice' && <>{i === 3 ? <View style={s.appleRow}><Apples count={item.operands.a} /><Txt style={s.operator}>+</Txt><Apples count={item.operands.b} /></View> : <Image source={bunny} resizeMode="contain" style={s.lessonBunny} />}<Txt style={s.equation}>{item.operands.a} + {item.operands.b} = ?</Txt>{active && sceneFeedback && (sceneFeedback.showApples ? <Hint a={item.operands.a} b={item.operands.b} title={sceneFeedback.text} /> : <View style={s.hint}><Txt style={s.hintTitle}>{sceneFeedback.text}</Txt></View>)}</>}
     </View>
     <View style={s.lessonBottom}>
-       {active && item.type === 'choice' && !solved && <View style={s.choices}>{item.options.map(n => <Pressable testID={`lesson-answer-${n}`} disabled={saving || !!pending && pending.answer !== n} style={s.choice} key={n} onPress={() => submit(n)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
-       {active && item.type === 'choice' && !solved && <Button secondary title="Show me how to count" onPress={help} disabled={saving || !!pending} icon="help-circle" />}
+        {active && item.type === 'choice' && !solved && <View style={s.choices}>{item.options.map(n => <Pressable testID={`lesson-answer-${n}`} disabled={saving || !review && !!pending && pending.answer !== n} style={s.choice} key={n} onPress={() => submit(n)}><Txt style={s.answerText}>{n}</Txt></Pressable>)}</View>}
+        {active && item.type === 'choice' && !solved && <Button secondary title="Show me how to count" onPress={help} disabled={saving || !review && !!pending} icon="help-circle" />}
        {active && solved && <Txt style={s.pill}>✓  Yes! You counted them all.</Txt>}
        {active && (pendingNeedsRetry ? message(error ?? 'A saved answer needs to be confirmed before continuing.', retryPending) : error && message(error, () => void guarded(save)))}
        {active && saving && <Txt style={s.swipeTip}>Saving your learning…</Txt>}
-       {active ? <><View style={s.controls}>{video && <><Pressable testID="button-play-pause" accessibilityRole="button" accessibilityLabel={playing ? 'Pause story' : 'Play story'} onPress={() => { setBlocked(false); if (playing) { setPlaying(false); if (!busy.current) void guarded(save); } else setPlaying(true); }} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Pressable testID="button-mute" accessibilityRole="button" accessibilityLabel={muted ? 'Turn sound on' : 'Mute sound'} onPress={() => setMuted(m => !m)} style={s.playButton}><Icon name={muted ? 'volume-x' : 'volume-2'} /></Pressable><Pressable testID="button-replay" accessibilityRole="button" accessibilityLabel="Replay story from the start" onPress={() => { setBlocked(false); setReplayKey(k => k + 1); setVideoProgress(0); setPlaying(true); }} style={s.playButton}><Icon name="rotate-ccw" /></Pressable></>}<Button coral title={i === scenes.length - 1 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(i + 1)} disabled={!canNext || saving} icon="arrow-right" style={{ flex: 1 }} /></View>
+        {active ? <><View style={s.controls}>{video && <><Pressable testID="button-play-pause" accessibilityRole="button" accessibilityLabel={playing ? 'Pause story' : 'Play story'} onPress={() => { setBlocked(false); if (playing) { setPlaying(false); if (reviewRef.current) void save(); else if (!busy.current) void guarded(save); } else setPlaying(true); }} style={s.playButton}><Icon name={playing ? 'pause' : 'play'} /></Pressable><Pressable testID="button-mute" accessibilityRole="button" accessibilityLabel={muted ? 'Turn sound on' : 'Mute sound'} onPress={() => setMuted(m => !m)} style={s.playButton}><Icon name={muted ? 'volume-x' : 'volume-2'} /></Pressable><Pressable testID="button-replay" accessibilityRole="button" accessibilityLabel="Replay story from the start" onPress={() => { setBlocked(false); setReplayKey(k => k + 1); setVideoProgress(0); if (reviewRef.current) { position.current = 0; void save(); } setPlaying(true); }} style={s.playButton}><Icon name="rotate-ccw" /></Pressable></>}<Button coral title={i === scenes.length - 1 ? 'Finish lesson' : 'Next scene'} onPress={() => changeChapter(i + 1)} disabled={!canNext || saving} icon="arrow-right" style={{ flex: 1 }} /></View>
        <Txt style={s.swipeTip}>{canNext ? (video && videoProgress >= 100 ? 'Story finished · swipe up, scroll, or tap Next' : 'Swipe up, scroll, or tap Next · 5 scenes') : 'Try the activity to continue'}</Txt>
-       <View testID="story-progress" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(video ? videoProgress : 100) }} style={s.track}><View style={[s.trackFill, { width: `${video ? videoProgress : 100}%` }]} /></View>{video && <Txt style={[s.swipeTip, { fontSize: 9, marginTop: 4 }]}>Narration uses a synthetic voice.</Txt>}</> : <Txt style={s.swipeTip}>{itemProgress?.solved || state.progress.completedSceneIds.includes(item.id) ? 'Scene completed' : 'Scroll to explore this scene'}</Txt>}
+        <View testID="story-progress" accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(video ? videoProgress : 100) }} style={s.track}><View style={[s.trackFill, { width: `${video ? videoProgress : 100}%` }]} /></View>{video && <Txt style={[s.swipeTip, { fontSize: 9, marginTop: 4 }]}>Narration uses a synthetic voice.</Txt>}</> : <Txt style={s.swipeTip}>{itemProgress.solved || itemProgress.completed ? 'Scene completed' : 'Scroll to explore this scene'}</Txt>}
     </View>
    </View>;
     })}
@@ -370,7 +483,7 @@ export default function LittleSprout() {
     </ScrollView>
   </View>;
   if (screen === 'intro') return page(<>{chrome('math', 'ADDITION · LESSON')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'flex-start' }]}>5 LITTLE SCENES</Txt><Txt style={s.hero}>Two apples.{'\n'}<Txt style={{ color: C.coral }}>Then two more!</Txt></Txt><Txt style={s.muted}>Join Bunny in the orchard and put two little groups together.</Txt><View style={s.celebrateArt}><Image source={bunny} style={s.celebrateBunny} resizeMode="contain" /><Txt style={[s.bubble, { position: 'absolute', bottom: 16, left: 16 }]}>2 + 2 = ?</Txt></View><Txt style={[s.pill, { alignSelf: 'flex-start', marginBottom: 15 }]}>Swipe up through 5 scenes · then the story ends</Txt><Button title={finished ? 'See your story' : state.progress.currentSceneIndex ? 'Resume the story' : 'Play the story'} coral icon="play" onPress={enterStory} /><Txt style={s.note}>Two animated story videos, then three activities. Narration uses a synthetic voice.</Txt></>);
-  return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={() => { const first = scenes[0]; const saved = state.progress.scenes.find(p => p.sceneId === first.id); sceneRef.current = first.id; position.current = saved?.positionPercent ?? 0; movedRef.current = saved?.movedCount ?? 0; resetMedia(position.current); setVideoProgress(resumeRef.current); setFeedback(null); setPlaying(true); chapterRef.current = 0; setChapter(0); setScreen('lesson'); }} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
+   return page(<>{chrome('math', 'LESSON COMPLETE')}<Txt style={[s.pill, { marginTop: 28, alignSelf: 'center' }]}>FIVE SCENES FINISHED</Txt><Txt style={[s.hero, s.center]}>You did it, {state.child.name}!</Txt><Txt style={[s.muted, s.center]}>You helped Bunny put apples together.</Txt><View style={s.celebrateArt}><Image source={bunny} resizeMode="contain" style={s.celebrateBunny} /><View style={s.sticker}><Icon name="award" size={30} /></View></View><View style={s.metricRow}><Metric value={`${scenes.length} / ${scenes.length}`} label="Story scenes" /><Metric value={state.summary.hints} label="Helpful hints" tint="#f9e5d6" /></View><Button coral title="Open homework adventure" icon="arrow-right" onPress={() => go('map')} /><Button secondary title="Review the story" onPress={startReview} style={{ marginTop: 12 }} /><Button secondary title="Back to my garden" onPress={() => go('home')} style={{ marginTop: 12 }} /></>);
 }
 
 const s = StyleSheet.create({

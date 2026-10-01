@@ -2,3 +2,4 @@
 - [Expo web API routing](expo-web-routing.md) — this workspace’s Expo preview gateway serves /api; web should not depend on a second hostname.
 - [Expo history timing](expo-history.md) — verify first-load Back/Forward; router initialization can overwrite child history markers.
 - [Lesson viewport sizing](lesson-paging.md) — initialize pager height before layout; inspect page rectangles when touch scrolling stalls.
+- [Story review isolation](story-review.md) — review is ungraded session-only replay; preserve durable completion and learning attempts.
