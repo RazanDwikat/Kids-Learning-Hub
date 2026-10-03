@@ -251,10 +251,10 @@ function checkAnswer(q: typeof activityQuestions.$inferSelect, answer: Answer): 
   const expected = q.answer as Answer;
   if (q.type === "choice" || q.type === "counting" || q.type === "direct") {
     if (keys.length !== 1 || typeof answer.value !== "string" ||
-      !(q.concept === "Shapes" ? /^(circle|rectangle|triangle)$/i.test(answer.value) : /^\d{1,2}$/.test(answer.value)))
+      !(q.concept.toLowerCase().includes("shape") ? /^[a-z ]{1,30}$/i.test(answer.value.trim()) : /^\d{1,3}$/.test(answer.value.trim())))
       throw new HttpError(400, "Expected a valid answer");
-    if (q.type === "choice" && !q.options.includes(answer.value)) throw new HttpError(400, "Answer must be an option");
-    return answer.value.toLowerCase() === expected.value?.toLowerCase();
+    if (q.type === "choice" && !q.options.includes(answer.value.trim().toLowerCase())) throw new HttpError(400, "Answer must be an option");
+    return answer.value.trim().toLowerCase() === expected.value?.trim().toLowerCase();
   }
   if (q.type === "drag" || q.type === "ordering") {
     if (keys.length !== 1 || !answer.items || answer.items.length !== q.tokens.length ||

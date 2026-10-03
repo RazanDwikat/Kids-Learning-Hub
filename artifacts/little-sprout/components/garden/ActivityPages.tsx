@@ -3,12 +3,13 @@ import { View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
-import { useGetActivityCatalog, useStartActivityRun, useGetActivityRun, useSubmitActivityAttempt, getGetActivityRunQueryKey, getGetActivityCatalogQueryKey, getGetChildDashboardQueryKey } from '@workspace/api-client-react';
+import { getActivityRun, useGetActivityCatalog, useStartActivityRun, useGetActivityRun, useSubmitActivityAttempt, getGetActivityRunQueryKey, getGetActivityCatalogQueryKey, getGetChildDashboardQueryKey } from '@workspace/api-client-react';
 import type { ActivityAnswer, ActivityAttemptInput, ActivityRun, ActivitySummary } from '@workspace/api-client-react';
 import { Action, Bunny, C, Card, Failure, Heading, Loading, Metric, Progress, T, styles as s } from './ui';
 import { Question } from './Question';
 import { HomeworkSetup } from './HomeworkSetup';
 import { AdventureMap, TreasureCelebration } from './AdventureMap';
+import { prepareActivityAnswer, readPendingAnswer, rejectedActivityAnswer } from '../../hooks/activityAnswers';
 
 const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); });
 const pendingKey = 'sprout-activity-pending-v1';
@@ -70,11 +71,15 @@ function RunPage({ runId, onBack, onHome, onParent, onShowMap }: { runId: string
   const [hint, setHint] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; correct: boolean } | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+  const [unreadable, setUnreadable] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const lock = useRef(false);
-  const load = () => { setError(null); AsyncStorage.getItem(pendingKey).then(raw => { if (raw) setPending(JSON.parse(raw)); setLoaded(true); }).catch(() => setError('Could not read your saved answer. Retry before continuing.')); };
+  const load = () => { setError(null); AsyncStorage.getItem(pendingKey).then(raw => {
+    if (raw) { const parsed = readPendingAnswer(raw); setPending(parsed); setUnreadable(parsed ? null : raw); }
+    setLoaded(true);
+  }).catch(() => setError('Could not read your saved answer. Retry before continuing.')); };
   useEffect(load, []);
   const refresh = () => { void cache.invalidateQueries({ queryKey: getGetActivityCatalogQueryKey() }); void cache.invalidateQueries({ queryKey: getGetChildDashboardQueryKey() }); };
   const send = async (p: Pending) => {
@@ -101,27 +106,63 @@ function RunPage({ runId, onBack, onHome, onParent, onShowMap }: { runId: string
     refresh();
   };
   const submit = async () => {
-    if (lock.current || !query.data || !loaded) return;
+    if (lock.current || !query.data || !loaded || unreadable !== null) return;
     lock.current = true; setSaving(true); setError(null);
+    let p = pending;
     try {
-      let p = pending;
       if (!p) {
         const question = query.data.questions[query.data.currentIndex];
         if (!question) throw new Error('No question is available to save. Return to your activities and retry.');
-        p = { runId, data: { questionId: question.id, answer, requestId: uuid() } };
+        const prepared = prepareActivityAnswer(question, answer);
+        if (prepared.error) throw new Error(prepared.error);
+        p = { runId, data: { questionId: question.id, answer: prepared.answer, requestId: uuid() } };
         await AsyncStorage.setItem(pendingKey, JSON.stringify(p)); setPending(p);
       }
       await send(p);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Your answer could not be saved. Please retry.'); }
+    } catch (e) {
+      if (p && rejectedActivityAnswer(e)) {
+        try {
+          await AsyncStorage.removeItem(pendingKey);
+          setPending(null);
+          if (p.runId === runId && p.data.questionId === query.data.questions[query.data.currentIndex]?.id) {
+            setAnswer(typeof p.data.answer.value === 'string' ? { value: p.data.answer.value } : {});
+            setShowMap(false);
+          }
+          setError('That answer could not be accepted. Please edit your answer and check it again. Your saved progress is unchanged.');
+        } catch { setError('Could not unlock your saved answer. Retry to finish recovery safely.'); }
+      } else setError(e instanceof Error ? e.message : 'Your answer could not be saved. Please retry.');
+    }
+    finally { lock.current = false; setSaving(false); }
+  };
+  const reconcile = async () => {
+    if (lock.current) return;
+    lock.current = true; setSaving(true);
+    try {
+      const saved = await getActivityRun(pending?.runId ?? runId);
+      cache.setQueryData(getGetActivityRunQueryKey(saved.id), saved);
+      if (pending && !saved.completedAt && saved.questions[saved.currentIndex]?.id === pending.data.questionId) {
+        setError('This answer still needs confirmation. Retry the saved answer before continuing.');
+        return;
+      }
+      // Archive only the unusable pending entry, never profile or learning storage.
+      const raw = await AsyncStorage.getItem(pendingKey);
+      if (raw !== null) await AsyncStorage.setItem(`${pendingKey}-recovery`, raw);
+      await AsyncStorage.removeItem(pendingKey);
+      setPending(null); setUnreadable(null); setAnswer({});
+      setError('Saved progress restored. You can continue from your current stop.');
+      refresh();
+    } catch { setError('Could not check saved progress. Your saved answer is still protected. Please retry.'); }
     finally { lock.current = false; setSaving(false); }
   };
   if (!loaded) return error ? <Failure message={error} retry={load} /> : <Loading />;
   if (query.isPending) return <Loading />;
   if (query.isError || !query.data) return <Failure retry={() => void query.refetch()} busy={query.isFetching} />;
   const run: ActivityRun = query.data;
+  if (unreadable !== null) return <Card><T>Your saved answer cannot be read. Restore your confirmed progress to continue; the unreadable answer will be kept separately for recovery.</T>{error && <T accessibilityRole="alert">{error}</T>}<Action title="Restore saved progress" disabled={saving} onPress={() => void reconcile()} /></Card>;
   const q = run.questions[run.currentIndex];
-  const valid = q?.type === 'matching' ? answer.pairs?.length === q.left.length : q?.type === 'drag' || q?.type === 'ordering' ? answer.items?.length === q.tokens.length : !!answer.value;
-  const banner = <>{pending && <Card><T>An answer is waiting for confirmation. Retry it before continuing.</T><Action title={saving ? 'Saving…' : 'Retry saved answer'} disabled={saving} onPress={() => void submit()} /></Card>}{error && <T accessibilityRole="alert" style={{ color: C.coral }}>{error}</T>}</>;
+  const validation = q ? prepareActivityAnswer(q, answer) : null;
+  const valid = !!validation && !validation.error;
+  const banner = <>{pending && <Card><T>An answer is waiting for confirmation. Retry it before continuing.</T><Action title={saving ? 'Saving…' : 'Retry saved answer'} disabled={saving} onPress={() => void submit()} /><Action title="Check saved progress" secondary disabled={saving} onPress={() => void reconcile()} /></Card>}{error && <T accessibilityRole="alert" style={{ color: C.coral }}>{error}</T>}{!pending && Object.keys(answer).length > 0 && validation?.error && <T accessibilityRole="alert">{validation.error}</T>}</>;
   if (transitionFrom !== null && run.kind !== 'practice') return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · BUNNY’S TRAIL</T><T style={s.title}>Bunny is on the move!</T><T style={s.muted}>You found the way. Follow Bunny to {run.completedAt ? 'the treasure' : 'the next stop'}.</T><Progress value={run.currentIndex} total={run.total} /><AdventureMap index={run.currentIndex} total={run.total} blocked onOpen={() => {}} transitionFrom={transitionFrom} onArrive={() => setTransitionFrom(null)} /></>;
   if (feedback) return <><T style={s.eyebrow}>{run.kind.toUpperCase()} · YOUR ANSWER</T><Bunny /><Card tint={feedback.correct ? C.mint : C.butter}><T style={s.heading}>{feedback.correct ? 'You found the way!' : 'Every try helps you grow.'}</T><T accessibilityLiveRegion="polite">{feedback.text}</T></Card>{banner}<Action testID="continue-after-feedback" title={run.completedAt ? 'Open the treasure' : feedback.correct ? 'Keep going' : 'Try again'} disabled={saving || !!pending} onPress={() => { setFeedback(null); setHint(false); setShowMap(feedback.correct && run.kind !== 'practice'); }} /></>;
   if (run.completedAt && showReward && run.kind !== 'practice') return <><T style={s.eyebrow}>A MOMENT TO CELEBRATE</T><T style={s.title}>{run.reward?.enabled ? run.reward.title : 'Your effort is the treasure.'}</T><TreasureCelebration /><Card tint={C.mint}><T testID="adventure-reward-message">{run.reward?.enabled ? run.reward.message : 'You kept trying and helped Bunny all the way. Tell a grown-up what you discovered!'}</T>{run.reward?.enabled && <T style={s.muted}>Chosen by your grown-up. Check with them about when to celebrate together.</T>}</Card><Action title="Show a grown-up" onPress={onParent} /><Action title="Back to my garden" secondary onPress={onHome} /><Action title="Back to results" secondary onPress={() => setShowReward(false)} /></>;
