@@ -7,3 +7,10 @@ uri = "file://artifacts/little-sprout-demo/public/audio/bg_music.mp3"
 type = "audio"
 title = "Little Sprout playful instrumental bed"
 description = "Generated music: Playful warm acoustic instrumental for a children Grade 1 learning app demo, marimba, pizzicato strings, soft brushed rhythm, 112 BPM. Curious gentle joyful mood, clear percussive ac…"
+
+[[outputs]]
+id = "nNfX97_XObS5Hjick62Ie"
+uri = "file://artifacts/little-sprout-demo/public/audio/walkthrough_music.mp3"
+type = "audio"
+title = "Patient instrumental for the detailed Little Sprout walkthrough"
+description = "Generated music: Gentle unobtrusive acoustic instrumental for a detailed educational app walkthrough aimed at parents. Warm marimba, soft acoustic guitar, light brushed percussion, 100 BPM steady pul…"
