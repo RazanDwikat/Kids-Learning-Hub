@@ -1,5 +1,11 @@
 # Little Sprout — a guided project walkthrough
 
+## Current v2 — action-synchronized, “هلا”, with project introduction
+
+The corrected authoritative script is `generated-artifacts/little-sprout-sync-v2/SCRIPT.md` with `narration.json`. All interaction footage was re-recorded in a new isolated demo profile using **160 atomic narration/action beats**. Each sentence stays on its own button, gesture or result until finished; later actions cannot run ahead of the narration. A separate 23.64-second opening explains the purpose of Little Sprout before the page walkthrough. All spoken wording was regenerated; the requested word is **هلا**.
+
+New final: `generated-artifacts/little-sprout-sync-v2/little-sprout-arabic-female-synced-hala-v2.mp4`. Video duration **567.000 seconds / 9:27**, 19 chapters, 16:9. New cache-safe preview: `female-walkthrough-synced-hala-v2.webm`. This supersedes the v1 timing claims and files below.
+
 ## Current requested edition
 The user now explicitly requests a detailed **female Arabic presenter** operating the actual app, with real clicks and scrolling. The new authoritative script is `generated-artifacts/little-sprout-female/SCRIPT.md` and its exact narration is `plan.json`. This recorded-film workflow supersedes the historical screenshot animation below. Full moving footage and final downloadable MP4 are produced with FFmpeg, with duration determined by clear speech and actual interactions rather than the old 90-second limit. No personal voice clone is used.
 

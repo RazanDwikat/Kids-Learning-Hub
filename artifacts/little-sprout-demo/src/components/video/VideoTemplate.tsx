@@ -38,7 +38,7 @@ export default function VideoTemplate({durations=SCENE_DURATIONS,loop=true,pause
   previous.current=key;onSceneChange?.(key);
  };
  return <VideoCanvas aspectRatio={VIDEO_ASPECT_RATIO} style={{background:'#fff9ef'}}>
-  <video ref={video} src={`${import.meta.env.BASE_URL}female-walkthrough-preview.webm`} poster={`${import.meta.env.BASE_URL}female-walkthrough-poster.jpg`} preload="auto" playsInline autoPlay={!paused} loop={loop} muted={muted} onLoadedMetadata={begin} onError={()=>setError(true)} style={{width:'100%',height:'100%',display:'block',objectFit:'contain'}}/>
+  <video ref={video} src={`${import.meta.env.BASE_URL}female-walkthrough-synced-hala-v2.webm?audio=sample-locked`} poster={`${import.meta.env.BASE_URL}female-walkthrough-synced-hala-v2.jpg`} preload="auto" playsInline autoPlay={!paused} loop={loop} muted={muted} onLoadedMetadata={begin} onError={()=>setError(true)} style={{width:'100%',height:'100%',display:'block',objectFit:'contain'}}/>
   {!playing&&<div style={{position:'absolute',inset:0,display:'grid',placeContent:'center',background:'#fff9efe8',textAlign:'center',color:'#397567',fontFamily:'DM Sans, sans-serif'}}><strong style={{fontSize:'2.6cqw'}}>little sprout.</strong><p dir="rtl" style={{fontSize:'1.4cqw'}}>{error?'تعذّر تحميل العرض. أعد تحميل الصفحة للمحاولة مرة ثانية.':'جارٍ تجهيز الجولة بالصوت والصورة…'}</p></div>}
   {playing&&<RecordingClock durations={durations} loop={loop} paused={paused} onChange={sceneChanged}/>}
  </VideoCanvas>;
