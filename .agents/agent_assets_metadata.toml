@@ -7,6 +7,7 @@ uri = "file://artifacts/little-sprout-demo/public/audio/bg_music.mp3"
 type = "audio"
 title = "Little Sprout playful instrumental bed"
 description = "Generated music: Playful warm acoustic instrumental for a children Grade 1 learning app demo, marimba, pizzicato strings, soft brushed rhythm, 112 BPM. Curious gentle joyful mood, clear percussive ac…"
+logical_id = "7fe81c4e-2488-40ca-a353-dad79ca8b298"
 
 [[outputs]]
 id = "nNfX97_XObS5Hjick62Ie"
@@ -14,3 +15,258 @@ uri = "file://artifacts/little-sprout-demo/public/audio/walkthrough_music.mp3"
 type = "audio"
 title = "Patient instrumental for the detailed Little Sprout walkthrough"
 description = "Generated music: Gentle unobtrusive acoustic instrumental for a detailed educational app walkthrough aimed at parents. Warm marimba, soft acoustic guitar, light brushed percussion, 100 BPM steady pul…"
+logical_id = "c04f2d5a-18b7-4510-8550-e7fbc9ddaee2"
+
+[[outputs]]
+id = "A046WJLR7gmiihWiFNpuP"
+uri = "file://generated-artifacts/little-sprout-female/audio/intro.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: بداية القصة"
+description = "Text-to-speech audio: هسّا بفتح بداية الدرس. مكتوب إنه خمس مشاهد: مشهدين قصة متحركة، وبعدهم ثلاث أنشطة. بكبس تشغيل القصة، ومنشوف الأرنب والتفاحات والمشهد وهو بتحرّك، مش صورة ثابتة. القصة بتشرح كيف مج…"
+logical_id = "8a0d06d2-7464-4b74-b070-b6f4c652e6fb"
+
+[[outputs]]
+id = "VljfF1igYJ87hFli_Pvnz"
+uri = "file://generated-artifacts/little-sprout-female/audio/home.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الصفحة الرئيسية والتمرير"
+description = "Text-to-speech audio: أهلاً، أنا هسّا رح أفرجيكم المشروع من جوّا التطبيق، صفحة صفحة. هاي الصفحة الرئيسية، وفيها قصة الجمع، والواجبات، والتدريب. بنزل شوي بالسكرول عشان نشوف مسار الصف والتقدّم المحفوظ.…"
+logical_id = "9b62c07e-e83f-4031-9d0d-2f3f7056b18d"
+
+[[outputs]]
+id = "RRhrzLZ_hEY2VfaytzbFJ"
+uri = "file://generated-artifacts/little-sprout-female/audio/learn.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الصف والمادة وموضوع الجمع"
+description = "Text-to-speech audio: من مسار المدرسة بفتح الصف الأول، وبختار الرياضيات. هاي صفحة المادة، ومنها بفتح موضوع الجمع. هون كمان في مدخل للواجب والتدريب. بنزل لتحت وبشوف المواضيع المقفولة؛ يعني مش كل عنوان…"
+logical_id = "6c322a3e-2830-4841-95d0-7ec1a1f952f4"
+
+[[outputs]]
+id = "NaScLWLllliYfNtoO6ugp"
+uri = "file://generated-artifacts/little-sprout-female/audio/story.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: أزرار القصة والانتقال بالسكرول"
+description = "Text-to-speech audio: خلّيني أجرّب أزرار القصة. هون بوقف التشغيل، وبرجعه. هذا الزر بكتم الصوت وبرجعه، وهذا بعيد المشهد من أوله. بكبس التالي للمشهد الثاني. وبقدر كمان أتنقّل بالسكرول بين المشاهد؛ هسّا…"
+logical_id = "e5057074-5b99-4cdd-9353-5eb946f7d4b9"
+
+[[outputs]]
+id = "gmH4LF9-1_fEJ6AqZjZjL"
+uri = "file://generated-artifacts/little-sprout-female/audio/drag.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: سحب التفاحات وتجربة الإجابات"
+description = "Text-to-speech audio: هون النشاط عملي. بمسك التفاحة وبسحبها لجهة الأرنب. وبقدر أنقل التفاحة بالكبس كمان، كبديل للسحب. لما تكتمل المجموعة بصير فينا نكمل. بالسؤال اللي بعده بجرّب جواب غلط أولاً؛ التطبي…"
+logical_id = "1faf2676-37eb-4d0c-bd29-6ec71f4b2a28"
+
+[[outputs]]
+id = "YKWBSzSufOmoiDld3smAI"
+uri = "file://generated-artifacts/little-sprout-female/audio/help.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: المساعدة وإنهاء الدرس"
+description = "Text-to-speech audio: بكبس ورّجيني كيف أعدّ، وبتظهر التفاحات عشان أفهم المجموعتين. ثلاث تفاحات واثنتين بصيروا خمسة، فبختار خمسة وبتظهر الإجابة الصحيحة. بكمل للتحدي الأخير: أربعة وثلاثة بيساووا سبعة. …"
+logical_id = "ac5299d3-5c73-4c01-a36e-e26b9d7a9848"
+
+[[outputs]]
+id = "fvI_8fmQGQ6puhyc6bc-F"
+uri = "file://generated-artifacts/little-sprout-female/audio/review.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: مراجعة جديدة مع حفظ الإنجاز"
+description = "Text-to-speech audio: من هون بفتح مراجعة القصة. هاي مش مسح للإنجاز؛ هي محاولة مراجعة جديدة، بتخلّيني أتفاعل مع المشاهد من أول وجديد. بطلع من القصة وبرجع للصفحة الرئيسية، وبنزل للتقدّم. زي ما شايفين، …"
+logical_id = "0387d4eb-fa25-4139-8595-2a146dd8332c"
+
+[[outputs]]
+id = "FIl7e5z7JtvYqbIRgALvd"
+uri = "file://generated-artifacts/little-sprout-female/audio/rewardcreate.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: إضافة مكافأة من لوحة الأهل"
+description = "Text-to-speech audio: قبل ما نبدأ الواجب، بدي أجهّز مكافأة. بفتح صفحة الأهل، ومن لوحة التحكم بكبس إضافة أول مكافأة. بكتب عنوان بسيط، ورسالة للطفل، وبختار الفئة. بترك خيار إدخالها بالسحب شغّال، وبكبس …"
+logical_id = "7c8ee982-eec6-412a-88e4-6e00221c4c32"
+
+[[outputs]]
+id = "2hX5TG9plOJkokrWqJqJR"
+uri = "file://generated-artifacts/little-sprout-female/audio/rewardmanage.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تعديل المكافآت والاختيار والحذف"
+description = "Text-to-speech audio: بفتح إدارة المكافآت. من القلم بقدر أعدّل الرسالة وأحفظها. والمفتاح بخلّيني أطلع المكافأة من السحب أو أرجعها، من غير ما أحذفها. رح أضيف مكافأة مؤقتة للتجربة، وبعدين أكبس سلة الحذ…"
+logical_id = "b39eb367-003e-4a30-80a7-62b6e3bced36"
+
+[[outputs]]
+id = "qI6iS7KeEaF09BcB4_WQs"
+uri = "file://generated-artifacts/little-sprout-female/audio/homework.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: اختيار صفحة الكتاب ومعاينة الأسئلة"
+description = "Text-to-speech audio: ننتقل للواجب. هون بختار صفحة من الكتاب بدل التصوير. بجرّب الصفحات خمسة وسبعة وثمانية، وبشوف كيف اسم الدرس والأسئلة بيتغيّروا. برجع للصفحة الرابعة، وهي واجب جمع. قبل البداية بقدر…"
+logical_id = "aba6b5be-d5fc-4223-a028-a7a1ad6e026d"
+
+[[outputs]]
+id = "wUfxKwlNRplWUSFTrnGxV"
+uri = "file://generated-artifacts/little-sprout-female/audio/trail.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: حل واجب كامل على الخريطة"
+description = "Text-to-speech audio: هاي خريطة المغامرة. بفتح المحطة الحالية، وبكتب جواب السؤال وبكبس تأكيد الإجابة. إذا احتجت مساعدة في زر للتلميح. لما يكون الجواب صحيح، الأرنب بتحرّك للمحطة اللي بعدها. هسّا رح أك…"
+logical_id = "e4785809-0192-4745-92ef-3ace386f21d8"
+
+[[outputs]]
+id = "sYStAYmpZyIczG8UV7fLl"
+uri = "file://generated-artifacts/little-sprout-female/audio/celebration.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الاحتفال والمكافأة والنتيجة"
+description = "Text-to-speech audio: وصلنا للنهاية، وظهر الاحتفال. هون بنشوف عدد المحطات والمحاولات. بكبس شوف احتفالي، وهاي المكافأة اللي جهّزناها من لوحة الأهل، معها الرسالة للطفل. من هون بقدر أرجع للبيت، أو أفتح …"
+logical_id = "c4fa2afb-975e-49e4-81c2-de8ab7e2d718"
+
+[[outputs]]
+id = "Z1RCuhR8HQHa3ntAHS_ak"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الامتحان وحفظ المحاولة ومتابعتها"
+description = "Text-to-speech audio: هسّا ببدّل من التدريب للامتحان وببدأ مغامرة الكنز. بحل أول محطة، وبطلع للصفحة الرئيسية. لما أرجع للامتحان بلاقي متابعة المغامرة، فبكمل من مكاني. رح أمشي بباقي أنواع الأسئلة لحد …"
+logical_id = "f6c0692a-cada-43f1-9a75-dc95dae8e475"
+
+[[outputs]]
+id = "VXU4IRmMKNCckPXH_CIJE"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تجربة أنواع أسئلة التدريب"
+description = "Text-to-speech audio: من التدريب ببدأ محاولة جديدة. في اختيار جواب، وترتيب قطع عشان أبني معادلة، ومطابقة كل جمع مع ناتجه. وبسؤال العدّ بكبس التفاحات واحدة واحدة، وبعدها بكتب الجواب. كمان بجرّب التلمي…"
+logical_id = "357de8d4-2ab6-4a25-bf13-6169e03e080d"
+
+[[outputs]]
+id = "2GWuDhGHq0PjVfZLFVv30"
+uri = "file://generated-artifacts/little-sprout-female/audio/dashboard.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: لوحة الأهل والتقدّم والتحليلات"
+description = "Text-to-speech audio: بعد التجربة بفتح لوحة الأهل. بنزل بالسكرول عشان نشوف الملخّص والأنشطة والمحاولات اللي انحفظت. بفتح تقدّم الطفل، وبعدها التحليلات. هون بنشوف نقاط القوة والمفاهيم اللي بدها تدريب،…"
+logical_id = "c9bf01b9-da10-4ee0-a68c-d379e49d5ac7"
+
+[[outputs]]
+id = "6wvv_EPc0UJz9WRqKu9JQ"
+uri = "file://generated-artifacts/little-sprout-female/audio/closing.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: نهاية الجولة العملية"
+description = "Text-to-speech audio: هيك مشينا بالمسارات الأساسية فعلياً: قصة متحركة، سكرول بين المشاهد، سحب وإجابات، واجب كامل، تدريب وامتحان، وإدارة مكافآت ومتابعة أهل. هاي جولة استخدام بالمشروع، مش ضمان إنه كل ح…"
+logical_id = "3aa43703-5b4e-4df8-b953-79ba7b039fec"
+
+[[outputs]]
+id = "CNRRF7mpkO6YceobPIUep"
+uri = "file://generated-artifacts/little-sprout-female/audio/profile.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: ملف الطفل والحفظ على الجهاز"
+description = "Text-to-speech audio: من صورة الحساب بفتح ملف الطفل، وبنزل لأشوف التقدّم والأنشطة والمكافآت. رح أعيد تحميل الصفحة، وبنرجع نشوف إن التقدّم موجود. مهم أوضح إنه الحفظ مرتبط بملف هالجهاز. ما في حالياً حس…"
+logical_id = "5288ea4c-0c3a-4e79-a702-d6c0fa0c748b"
+
+[[outputs]]
+id = "kC1URfFu0QwM0xAR4fvFg"
+uri = "file://generated-artifacts/little-sprout-female/audio/scan.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تجربة التصوير وحدود قراءة الصفحة"
+description = "Text-to-speech audio: خلّيني أفرجيكم خيار تصوير الواجب كمان. رح أفتح الكاميرا وألتقط لقطة اختبار؛ هون مستخدمة كاميرا افتراضية للتجربة، مش ورقة واجب حقيقية. بعد تحليل الصفحة بتظهر الرسالة بوضوح: قراءة…"
+logical_id = "c63a9675-abf7-46af-8c50-85157c857c5a"
+
+[[outputs]]
+id = "CJRJo2hKimsn6AUtWtBuV"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_intro.mp3"
+type = "audio"
+title = "Female presenter detailed practice_intro"
+description = "Text-to-speech audio: بفتح التدريب، وببدأ محاولة جديدة وبجرّب زر التلميح."
+logical_id = "c34a0f54-2123-4846-bfdf-d91cfd64b8b7"
+
+[[outputs]]
+id = "Jq4lZI1GU3V6QbTEOR4Ov"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_choice.mp3"
+type = "audio"
+title = "Female presenter detailed practice_choice"
+description = "Text-to-speech audio: هون بختار خمسة: تفاحتين وثلاثة بصيروا خمسة."
+logical_id = "67db5c1f-90f7-425a-91ba-7cf3c2809e26"
+
+[[outputs]]
+id = "9nbZoQbYMAGt6_npxAGci"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_pieces.mp3"
+type = "audio"
+title = "Female presenter detailed practice_pieces"
+description = "Text-to-speech audio: هسّا بركّب المعادلة قطعة قطعة. بجرّب التراجع عن آخر قطعة، وبعدين برجع أكمل: اثنين، زائد اثنين، يساوي أربعة."
+logical_id = "fcaba7cd-7f70-4112-b9d5-a84fe8bc0fb9"
+
+[[outputs]]
+id = "wgWXdGrkBy_2IJYm85xM-"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_match.mp3"
+type = "audio"
+title = "Female presenter detailed practice_match"
+description = "Text-to-speech audio: بالمطابقة بكبس عملية الجمع من اليسار، وبختار ناتجها من اليمين. وبكررها لكل مجموعة."
+logical_id = "a7dd920f-f126-49db-b612-795bf695b6c3"
+
+[[outputs]]
+id = "kOI1KniuBgE1AEhnLeeoe"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_count.mp3"
+type = "audio"
+title = "Female presenter detailed practice_count"
+description = "Text-to-speech audio: هون بكبس كل تفاحة مرة، وبنشوف رقم العدّ عليها. بعدين بكتب خمسة وبأكد الجواب."
+logical_id = "e3e304c2-270d-448c-9c75-a7b4a8725e0c"
+
+[[outputs]]
+id = "zUs0QVPcfCtj8RXnpHZPy"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_direct.mp3"
+type = "audio"
+title = "Female presenter detailed practice_direct"
+description = "Text-to-speech audio: وآخر سؤال: أربعة وثلاثة، سبعة. وهيك خلص التدريب."
+logical_id = "14fa1d8a-6247-4a97-b574-9509478217ee"
+
+[[outputs]]
+id = "__m61EiB-H_4-L0p1ISU4"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_pieces.mp3"
+type = "audio"
+title = "Female presenter detailed exam_pieces"
+description = "Text-to-speech audio: هاي المحطة الثانية. بركّب المعادلة وبأكدها، وبنشوف الأرنب وهو بكمل الطريق."
+logical_id = "7b7bf546-28cb-4af4-9a1f-803760db9642"
+
+[[outputs]]
+id = "hlr80MoQLu-tpRkTchbfe"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_intro.mp3"
+type = "audio"
+title = "Female presenter detailed exam_intro"
+description = "Text-to-speech audio: ببدّل للامتحان، وببدأ مغامرة الكنز. بحل أول محطة، وبطلع للبيت. لما أرجع، بكبس متابعة المغامرة عشان أكمل من مكاني."
+logical_id = "21fea149-3b24-4f4d-bc24-d9e708e693fe"
+
+[[outputs]]
+id = "id9sn0Bf6kuVwH9ODmOlz"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_match.mp3"
+type = "audio"
+title = "Female presenter detailed exam_match"
+description = "Text-to-speech audio: بالمحطة الثالثة بطابق كل عملية مع جوابها. براجع الأزواج، وبكبس تأكيد الإجابة."
+logical_id = "e0d5cc82-ea80-4035-bd53-3b5ec7641d7c"
+
+[[outputs]]
+id = "piFqgc5aGA_eFlV9fuSKE"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_direct.mp3"
+type = "audio"
+title = "Female presenter detailed exam_direct"
+description = "Text-to-speech audio: أربعة وثلاثة بيساووا سبعة. بكتبها وبأكد."
+logical_id = "10e8d955-dd61-4e33-8f71-3ce6fd67972e"
+
+[[outputs]]
+id = "XvHDQwXBvVqs3sVsnUovf"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_count.mp3"
+type = "audio"
+title = "Female presenter detailed exam_count"
+description = "Text-to-speech audio: هسّا بعدّ التفاحات واحدة واحدة، وبكتب العدد. بعدها بيفتح الطريق للمحطة اللي بعدها."
+logical_id = "875752ad-031b-4fc9-97b5-d0668796a178"
+
+[[outputs]]
+id = "pm8Rq3NrZyS_n-1d6D2QR"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_order.mp3"
+type = "audio"
+title = "Female presenter detailed exam_order"
+description = "Text-to-speech audio: وبالأخيرة برتّب واحد، اثنين، ثلاثة. وبوصل للكنز وبشوف نتيجة الامتحان."
+logical_id = "6d6d3a71-f5a8-460a-8d15-48f1d14ae5ce"
+
+[[outputs]]
+id = "oTvzdbb6fotkL96-s3u5L"
+uri = "file://generated-artifacts/little-sprout-female/little-sprout-female-arabic-walkthrough.mp4"
+type = "video"
+title = "ديمو Little Sprout — شرح عربي بصوت أنثوي"
+description = "تسجيل فعلي للتطبيق مع التنقّل والكبسات والتمرير وشرح القصص والواجبات والمكافآت وقسم الأهل. المدة ٦:٢٥، بصيغة MP4 وجودة 720p."
+logical_id = "4b73ce7d-2ffc-4720-b1cc-bcbcff6d8563"
+content_hash = "sha256:fc43700bdfc3b0481acf7a846d447f25678f19cad91a2c45f6f509f62f906e4f"
+size = 13484102
+mtime_ms = 1793050424817
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:cac56a7d-f81b-4246-b85e-78f4872a4114/4b73ce7d-2ffc-4720-b1cc-bcbcff6d8563/9876fc4c-9a0b-43c0-8865-5b1203accce7"
+storage_version_token = "1793051004460578"
+content_type = "video/mp4"

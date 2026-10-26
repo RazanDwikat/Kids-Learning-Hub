@@ -1,5 +1,10 @@
 # Little Sprout — a guided project walkthrough
 
+## Current requested edition
+The user now explicitly requests a detailed **female Arabic presenter** operating the actual app, with real clicks and scrolling. The new authoritative script is `generated-artifacts/little-sprout-female/SCRIPT.md` and its exact narration is `plan.json`. This recorded-film workflow supersedes the historical screenshot animation below. Full moving footage and final downloadable MP4 are produced with FFmpeg, with duration determined by clear speech and actual interactions rather than the old 90-second limit. No personal voice clone is used.
+
+**Completed:** 18 recorded chapters, 6:25.120 video timeline (6:25.141 MP4 container), 1280×720. Female Jordanian Arabic presenter **Lina**. Practice and Exam use the question-synchronized replacement lines in `detail-narration.json`. The existing preview now plays the real film, not the old slideshow. Final output and exact checks: `generated-artifacts/little-sprout-female/VERIFICATION.md`.
+
 ## Revision brief and locked decisions
 The user rejected the brief promotional treatment and asked to walk through the project in more detail. Replace that treatment with an actual-screen guided tour. Keep 16:9, Fredoka/DM Sans, the real brand palette, recording lifecycle and preview controls. Extend to 90 seconds; the old 30-second score cannot support this runtime. No voiceover was explicitly requested, so use readable, timed explanatory captions and one instrumental bed.
 

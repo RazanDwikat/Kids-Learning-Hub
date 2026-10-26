@@ -4,3 +4,4 @@
 - [Lesson viewport sizing](lesson-paging.md) — initialize pager height before layout; inspect page rectangles when touch scrolling stalls.
 - [Story review isolation](story-review.md) — review is ungraded session-only replay; preserve durable completion and learning attempts.
 - [Answer recovery safety](answer-recovery.md) — distinguish rejected answers from uncertain submissions; preserve retry identity and child progress.
+- [Project demo expectations](demo-expectations.md) — actual app walkthrough with female Arabic narration, not promotional animation or screenshots.

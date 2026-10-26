@@ -1,18 +1,45 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
-import { useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { VideoCanvas, VideoPausedContext, useVideoPlayer, type VideoAspectRatio } from '@/lib/video';
-import { Walkthrough, TOUR } from './Walkthrough';
+import { useEffect, useRef, useState } from 'react';
+import { VideoCanvas, useVideoPlayer, type VideoAspectRatio } from '@/lib/video';
+import { RECORDED_CHAPTERS } from './recordedMeta';
 
-export const SCENE_DURATIONS = {home:9050,story:9600,interact:9000,review:8400,homework:9600,adventure:7800,practice:9000,rewards:9600,progress:9600,scope:8350};
+export const SCENE_DURATIONS:Record<string,number>=Object.fromEntries(RECORDED_CHAPTERS.map(c=>[c.key,c.duration]));
 export const VIDEO_ASPECT_RATIO:VideoAspectRatio='16:9';
-const offsets:Record<string,number>={};let cursor=0;for(const [key,ms] of Object.entries(SCENE_DURATIONS)){offsets[key]=cursor/1000;cursor+=ms;}
-export default function VideoTemplate({durations=SCENE_DURATIONS,loop=true,paused=false,muted=false,onSceneChange}:{durations?:Record<string,number>;loop?:boolean;paused?:boolean;muted?:boolean;onSceneChange?:(key:string)=>void}={}){
+const offsets:Record<string,number>={};let cursor=0;for(const c of RECORDED_CHAPTERS){offsets[c.key]=cursor;cursor+=c.duration/1000;}
+const baseKey=(key:string)=>key.replace(/_r[12]$/,'');
+type Props={durations?:Record<string,number>;loop?:boolean;paused?:boolean;muted?:boolean;onSceneChange?:(key:string)=>void};
+function RecordingClock({durations,loop,paused,onChange}:{durations:Record<string,number>;loop:boolean;paused:boolean;onChange:(key:string)=>void}){
  const {currentSceneKey}=useVideoPlayer({durations,loop,paused});
- const base=currentSceneKey.replace(/_r[12]$/,'');const index=TOUR.findIndex(s=>s.key===base);
- const audio=useRef<HTMLAudioElement>(null);const last=useRef<string|null>(null);
- useEffect(()=>{onSceneChange?.(currentSceneKey)},[currentSceneKey,onSceneChange]);
- useEffect(()=>{const a=audio.current;if(!a)return;a.volume=.45;if(paused){a.pause();return}if(last.current!==currentSceneKey){last.current=currentSceneKey;const t=offsets[base]??0;if(Math.abs(a.currentTime-t)>.18)a.currentTime=t;}void a.play().catch(()=>{});},[currentSceneKey,base,paused,muted]);
- return <VideoPausedContext.Provider value={paused}><VideoCanvas aspectRatio={VIDEO_ASPECT_RATIO} style={{background:'#fff9ef'}}><AnimatePresence mode="sync">{index>=0&&<Walkthrough index={index} key={currentSceneKey}/>}</AnimatePresence><audio ref={audio} src={`${import.meta.env.BASE_URL}audio/walkthrough_music.mp3`} preload="auto" autoPlay muted={muted}/></VideoCanvas></VideoPausedContext.Provider>;
+ const callback=useRef(onChange);callback.current=onChange;
+ useEffect(()=>{callback.current(currentSceneKey)},[currentSceneKey]);
+ return null;
+}
+export default function VideoTemplate({durations=SCENE_DURATIONS,loop=true,paused=false,muted=false,onSceneChange}:Props={}){
+ const video=useRef<HTMLVideoElement>(null);const [playing,setPlaying]=useState(false);const [error,setError]=useState(false);
+ const initialOffset=useRef(offsets[baseKey(Object.keys(durations)[0])]);const previous=useRef<string|null>(null);
+ const frameCallback=useRef<number|null>(null);
+ useEffect(()=>{const v=video.current;if(!v)return;if(paused)v.pause();else void v.play().catch(()=>{});},[paused,muted]);
+ useEffect(()=>()=>{if(frameCallback.current!==null)video.current?.cancelVideoFrameCallback(frameCallback.current)},[]);
+ const begin=()=>{
+  const v=video.current;if(!v)return;v.currentTime=initialOffset.current;
+  const firstFrame=(_now:number,metadata:VideoFrameCallbackMetadata)=>{
+   if(metadata.mediaTime>initialOffset.current+.001){setPlaying(true);return}
+   frameCallback.current=v.requestVideoFrameCallback(firstFrame);
+  };
+  frameCallback.current=v.requestVideoFrameCallback(firstFrame);
+  if(!paused)void v.play().catch(()=>{});
+ };
+ const sceneChanged=(key:string)=>{
+  const old=previous.current;const nextBase=baseKey(key);
+  // Automatic contiguous chapter changes do not seek: AV remains locked to
+  // the MP4's own clock. Only repeating a selected chapter needs a seek.
+  if(old&&baseKey(old)===nextBase&&video.current){video.current.currentTime=offsets[nextBase];if(!paused)void video.current.play().catch(()=>{})}
+  previous.current=key;onSceneChange?.(key);
+ };
+ return <VideoCanvas aspectRatio={VIDEO_ASPECT_RATIO} style={{background:'#fff9ef'}}>
+  <video ref={video} src={`${import.meta.env.BASE_URL}female-walkthrough-preview.webm`} poster={`${import.meta.env.BASE_URL}female-walkthrough-poster.jpg`} preload="auto" playsInline autoPlay={!paused} loop={loop} muted={muted} onLoadedMetadata={begin} onError={()=>setError(true)} style={{width:'100%',height:'100%',display:'block',objectFit:'contain'}}/>
+  {!playing&&<div style={{position:'absolute',inset:0,display:'grid',placeContent:'center',background:'#fff9efe8',textAlign:'center',color:'#397567',fontFamily:'DM Sans, sans-serif'}}><strong style={{fontSize:'2.6cqw'}}>little sprout.</strong><p dir="rtl" style={{fontSize:'1.4cqw'}}>{error?'تعذّر تحميل العرض. أعد تحميل الصفحة للمحاولة مرة ثانية.':'جارٍ تجهيز الجولة بالصوت والصورة…'}</p></div>}
+  {playing&&<RecordingClock durations={durations} loop={loop} paused={paused} onChange={sceneChanged}/>}
+ </VideoCanvas>;
 }
