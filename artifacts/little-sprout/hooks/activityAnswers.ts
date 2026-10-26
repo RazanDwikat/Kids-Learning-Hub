@@ -1,4 +1,4 @@
-import type { ActivityAnswer, ActivityAttemptInput, ActivityQuestion } from '@workspace/api-client-react';
+import type { ActivityAnswer, ActivityAttemptInput, ActivityQuestion, ActivityAnswerRejection } from '@workspace/api-client-react';
 
 export type PendingActivityAnswer = { runId: string; data: ActivityAttemptInput };
 export function readPendingAnswer(raw: string): PendingActivityAnswer | null {
@@ -30,11 +30,10 @@ export function prepareActivityAnswer(q: ActivityQuestion, answer: ActivityAnswe
   } else error = 'This question cannot be checked yet.';
   return { answer: normalized, error };
 }
-// Only these endpoint-specific, pre-write rejections are safe to release.
+// Only this endpoint-specific, pre-write rejection is safe to release.
+// Unknown/legacy codes fail closed; human-readable copy is never a discriminator.
+const rejectionCode: ActivityAnswerRejection['code'] = 'ACTIVITY_ANSWER_REJECTED';
 export function rejectedActivityAnswer(error: unknown): boolean {
-  const e = error as { status?: number; data?: { error?: string } };
-  return e?.status === 400 && [
-    'Invalid attempt', 'Expected a valid answer', 'Answer must be an option',
-    'Expected an ordering of the provided tokens', 'Expected each provided item matched once',
-  ].includes(e.data?.error ?? '');
+  const e = error as { status?: number; data?: { code?: unknown } };
+  return e?.status === 400 && e.data?.code === rejectionCode;
 }

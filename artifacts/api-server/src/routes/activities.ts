@@ -14,6 +14,7 @@ import {
   GetHomeworkPhotoStatusResponse, GetRewardConfigResponse, SaveRewardConfigBody, SaveRewardConfigResponse,
   ListRewardOptionsResponse, CreateRewardOptionBody, CreateRewardOptionResponse,
   UpdateRewardOptionBody, UpdateRewardOptionParams, UpdateRewardOptionResponse, DeleteRewardOptionParams,
+  type ActivityAnswerRejection, type ActivityAnswerConflict,
 } from "@workspace/api-zod";
 import { additionCatalog, ADDITION_LESSON_ID } from "../lib/learning-curriculum";
 import { ensureActivitiesReady } from "../lib/activity-seed";
@@ -22,9 +23,9 @@ import { book, pages, activityIdForPage } from "../lib/textbook-catalog";
 const router: IRouter = Router();
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 class HttpError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public code?: ActivityAnswerRejection["code"] | ActivityAnswerConflict["code"]) { super(message); }
 }
-const fail = (status: number, message: string): never => { throw new HttpError(status, message); };
+const fail = (status: number, message: string, code?: HttpError["code"]): never => { throw new HttpError(status, message, code); };
 const child = (res: Response) => res.locals.childId as string;
 
 router.use(["/activities", "/dashboard", "/textbooks", "/homework", "/reward-config", "/reward-options"], async (req, res, next): Promise<void> => {
@@ -252,20 +253,20 @@ function checkAnswer(q: typeof activityQuestions.$inferSelect, answer: Answer): 
   if (q.type === "choice" || q.type === "counting" || q.type === "direct") {
     if (keys.length !== 1 || typeof answer.value !== "string" ||
       !(q.concept.toLowerCase().includes("shape") ? /^[a-z ]{1,30}$/i.test(answer.value.trim()) : /^\d{1,3}$/.test(answer.value.trim())))
-      throw new HttpError(400, "Expected a valid answer");
-    if (q.type === "choice" && !q.options.includes(answer.value.trim().toLowerCase())) throw new HttpError(400, "Answer must be an option");
+      throw new HttpError(400, "Expected a valid answer", "ACTIVITY_ANSWER_REJECTED");
+    if (q.type === "choice" && !q.options.includes(answer.value.trim().toLowerCase())) throw new HttpError(400, "Answer must be an option", "ACTIVITY_ANSWER_REJECTED");
     return answer.value.trim().toLowerCase() === expected.value?.trim().toLowerCase();
   }
   if (q.type === "drag" || q.type === "ordering") {
     if (keys.length !== 1 || !answer.items || answer.items.length !== q.tokens.length ||
-      [...answer.items].sort().join("\0") !== [...q.tokens].sort().join("\0")) throw new HttpError(400, "Expected an ordering of the provided tokens");
+      [...answer.items].sort().join("\0") !== [...q.tokens].sort().join("\0")) throw new HttpError(400, "Expected an ordering of the provided tokens", "ACTIVITY_ANSWER_REJECTED");
     return answer.items.every((item, index) => item === expected.items?.[index]);
   }
   if (q.type === "matching") {
     if (keys.length !== 1 || !answer.pairs || answer.pairs.length !== q.left.length ||
       new Set(answer.pairs.map(p => p.left)).size !== q.left.length ||
       new Set(answer.pairs.map(p => p.right)).size !== q.right.length ||
-      answer.pairs.some(p => !q.left.includes(p.left) || !q.right.includes(p.right))) throw new HttpError(400, "Expected each provided item matched once");
+      answer.pairs.some(p => !q.left.includes(p.left) || !q.right.includes(p.right))) throw new HttpError(400, "Expected each provided item matched once", "ACTIVITY_ANSWER_REJECTED");
     return answer.pairs.every(p => expected.pairs?.some(e => e.left === p.left && e.right === p.right));
   }
   throw new HttpError(500, "Unsupported question type");
@@ -274,7 +275,7 @@ router.post("/activities/runs/:runId/attempts", async (req, res): Promise<void> 
   const params = SubmitActivityAttemptParams.safeParse(req.params);
   const body = SubmitActivityAttemptBody.safeParse(req.body);
   if (!params.success || !body.success || Object.keys(req.body).some(k => !["requestId", "questionId", "answer"].includes(k)) ||
-    Object.keys(body.data.answer).some(k => !["value", "items", "pairs"].includes(k))) throw new HttpError(400, "Invalid attempt");
+    Object.keys(body.data.answer).some(k => !["value", "items", "pairs"].includes(k))) throw new HttpError(400, "Invalid attempt", "ACTIVITY_ANSWER_REJECTED");
   const { runId } = params.data;
   const { requestId, questionId, answer } = body.data;
   const id = child(res);
@@ -287,12 +288,12 @@ router.post("/activities/runs/:runId/attempts", async (req, res): Promise<void> 
     const [retry] = await tx.select().from(activityAttempts).where(and(eq(activityAttempts.childId, id), eq(activityAttempts.requestId, requestId)));
     if (retry) {
       if (retry.runId !== run.id || retry.questionId !== questionId || JSON.stringify(retry.answer) !== JSON.stringify(answer))
-        fail(409, "Request ID already used for another answer");
+        fail(409, "Request ID already used for another answer", "ACTIVITY_REQUEST_ID_CONFLICT");
       return { correct: retry.correct, feedback: retry.feedback, run: await presentRun(await ownedRun(run.id, id, tx), tx) };
     }
-    if (run.completedAt) fail(409, "Run complete");
+    if (run.completedAt) fail(409, "Run complete", "ACTIVITY_RUN_COMPLETE");
     const [q] = await tx.select().from(activityQuestions).where(and(eq(activityQuestions.activityId, run.activityId), eq(activityQuestions.index, run.currentIndex)));
-    if (!q || q.id !== questionId) throw new HttpError(409, "Submit the current question");
+    if (!q || q.id !== questionId) throw new HttpError(409, "Submit the current question", "ACTIVITY_QUESTION_NOT_CURRENT");
     const correct = checkAnswer(q, answer);
     const previous = await tx.select({ id: activityAttempts.id }).from(activityAttempts)
       .where(and(eq(activityAttempts.runId, run.id), eq(activityAttempts.questionId, q.id)));
@@ -374,7 +375,7 @@ router.get("/dashboard", async (_req, res): Promise<void> => {
 });
 
 router.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-  if (err instanceof HttpError) { res.status(err.status).json({ error: err.message }); return; }
+  if (err instanceof HttpError) { res.status(err.status).json({ error: err.message, ...(err.code ? { code: err.code } : {}) }); return; }
   req.log.error({ errorType: err instanceof Error ? err.name : "Unknown" }, "Activity request failed");
   res.status(500).json({ error: "Internal server error" });
 });

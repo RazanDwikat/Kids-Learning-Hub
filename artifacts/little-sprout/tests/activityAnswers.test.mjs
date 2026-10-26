@@ -21,8 +21,16 @@ test('choice, ordering and matching require structurally valid answers', () => {
   assert.ok(prepareActivityAnswer(q, { pairs: [{ left: 'a', right: '2' }, { left: 'b', right: '2' }] }).error);
 });
 test('only definitive known validation errors release a pending attempt', () => {
-  assert.equal(rejectedActivityAnswer({ status: 400, data: { error: 'Expected a valid answer' } }), true);
-  for (const status of [401, 404, 409, 500, 502]) assert.equal(rejectedActivityAnswer({ status, data: { error: 'Expected a valid answer' } }), false);
+  const code = 'ACTIVITY_ANSWER_REJECTED';
+  for (const error of ['Expected a valid answer', 'Completely changed copy', '', undefined])
+    assert.equal(rejectedActivityAnswer({ status: 400, data: { code, error } }), true);
+  for (const status of [401, 404, 409, 500, 502, undefined])
+    assert.equal(rejectedActivityAnswer({ status, data: { code } }), false);
+  for (const code of [undefined, null, 42, 'FUTURE_CODE', 'ACTIVITY_REQUEST_ID_CONFLICT', 'ACTIVITY_RUN_COMPLETE', 'ACTIVITY_QUESTION_NOT_CURRENT'])
+    for (const status of [400, 409])
+      assert.equal(rejectedActivityAnswer({ status, data: { code, error: 'Expected a valid answer' } }), false);
+  for (const error of [null, undefined, {}, { status: 400 }, { status: 400, data: null }])
+    assert.equal(rejectedActivityAnswer(error), false);
   assert.equal(rejectedActivityAnswer(new Error('Network failed')), false);
   assert.equal(rejectedActivityAnswer({ status: 400, data: { error: 'Unknown' } }), false);
 });

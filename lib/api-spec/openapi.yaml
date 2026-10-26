@@ -240,10 +240,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ActivityAttemptResult" }
-        "400": { $ref: "#/components/responses/BadRequest" }
+        "400":
+          description: Pre-write validation rejection; safe to edit this answer.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityAnswerRejection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { $ref: "#/components/responses/Conflict" }
+        "409":
+          description: Reconcile confirmed run progress; preserve the pending payload and request ID.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityAnswerConflict" }
   /dashboard:
     get:
       operationId: getChildDashboard
@@ -656,6 +664,24 @@ components:
           items: { type: string }
         streakDays: { type: integer }
         rewards: { type: integer, description: "One reward per completed run." }
+    ActivityAnswerRejection:
+      type: object
+      required: [error, code]
+      properties:
+        error: { type: string, description: "Human-readable text; not a recovery discriminator." }
+        code:
+          type: string
+          enum: [ACTIVITY_ANSWER_REJECTED]
+          description: Guaranteed pre-write rejection. Only HTTP 400 with this code permits editing pending answers.
+    ActivityAnswerConflict:
+      type: object
+      required: [error, code]
+      properties:
+        error: { type: string }
+        code:
+          type: string
+          enum: [ACTIVITY_REQUEST_ID_CONFLICT, ACTIVITY_RUN_COMPLETE, ACTIVITY_QUESTION_NOT_CURRENT]
+          description: Never proof that an earlier submission was not saved.
     ApiError:
       type: object
       required: [error]

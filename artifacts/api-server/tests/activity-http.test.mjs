@@ -45,7 +45,12 @@ test("child-owned activities persist every answer, deduplicate retries and award
   assert.equal(bad.data.run.currentIndex, 0);
   assert.deepEqual(bad.data.run.lastFeedback.answer, { value: "4" });
   assert.equal((await call(attemptPath, "POST", token, { requestId: badId, questionId: run.questions[0].id, answer: { value: "4" } })).status, 200);
-  assert.equal((await call(attemptPath, "POST", token, { requestId: badId, questionId: run.questions[0].id, answer: { value: "5" } })).status, 409);
+  const conflict = await call(attemptPath, "POST", token, { requestId: badId, questionId: run.questions[0].id, answer: { value: "5" } });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.data.code, "ACTIVITY_REQUEST_ID_CONFLICT");
+  const stale = await call(attemptPath, "POST", token, { requestId: randomUUID(), questionId: run.questions[1].id, answer: { value: "5" } });
+  assert.equal(stale.status, 409);
+  assert.equal(stale.data.code, "ACTIVITY_QUESTION_NOT_CURRENT");
 
   const answers = [
     { value: "5" },
@@ -55,6 +60,13 @@ test("child-owned activities persist every answer, deduplicate retries and award
     { value: "7" },
   ];
   for (const [i, answer] of answers.entries()) {
+    const before = (await call(`/activities/runs/${run.id}`, "GET", token)).data;
+    for (const invalid of [{}, { value: "???" }, { items: ["unknown"] }, { pairs: [] }, { extra: true }]) {
+      const rejected = await call(attemptPath, "POST", token, { requestId: randomUUID(), questionId: run.questions[i].id, answer: invalid });
+      assert.equal(rejected.status, 400);
+      assert.equal(rejected.data.code, "ACTIVITY_ANSWER_REJECTED");
+    }
+    assert.deepEqual((await call(`/activities/runs/${run.id}`, "GET", token)).data, before);
     const result = await call(attemptPath, "POST", token, { requestId: randomUUID(), questionId: run.questions[i].id, answer });
     assert.equal(result.status, 200);
     assert.equal(result.data.correct, true);
@@ -64,8 +76,10 @@ test("child-owned activities persist every answer, deduplicate retries and award
   assert.ok(completed.data.completedAt);
   assert.equal(completed.data.correctCount, 5);
   assert.equal((await call(path, "POST", token, { requestId: randomUUID() })).status, 409);
-  assert.equal((await call(attemptPath, "POST", token,
-    { requestId: randomUUID(), questionId: run.questions[4].id, answer: { value: "7" } })).status, 409);
+  const completeConflict = await call(attemptPath, "POST", token,
+    { requestId: randomUUID(), questionId: run.questions[4].id, answer: { value: "7" } });
+  assert.equal(completeConflict.status, 409);
+  assert.equal(completeConflict.data.code, "ACTIVITY_RUN_COMPLETE");
   const dashboard = await call("/dashboard", "GET", token);
   assert.equal(dashboard.status, 200);
   assert.equal(dashboard.data.rewards, 0, "without enabled options no reward is promised");

@@ -20,7 +20,8 @@ test('invalid answers do not write; correction, normalization and retry are safe
     for (let i = 0; i < 2; i++) {
       const rejected = await call(`${path}/attempts`, 'POST', input);
       assert.equal(rejected.status, 400);
-      assert.equal(rejected.data.error, 'Expected a valid answer');
+      assert.equal(rejected.data.code, 'ACTIVITY_ANSWER_REJECTED');
+      assert.equal(typeof rejected.data.error, 'string');
     }
     assert.deepEqual((await call(path)).data, before);
     const incorrect = await call(`${path}/attempts`, 'POST', { ...input, requestId: randomUUID(), answer: { value: wrong } });

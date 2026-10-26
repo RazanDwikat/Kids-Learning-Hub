@@ -1,2 +1,2 @@
 export * from "./generated/api";
-export type { LearningState, LearningScene, LearningStateEnvelope } from "./generated/types";
+export type { LearningState, LearningScene, LearningStateEnvelope, ActivityAnswerRejection, ActivityAnswerConflict } from "./generated/types";

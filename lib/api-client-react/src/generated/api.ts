@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityAnswerConflict,
+  ActivityAnswerRejection,
   ActivityAttemptInput,
   ActivityAttemptResult,
   ActivityRun,
@@ -1163,7 +1165,7 @@ return customFetch<ActivityAttemptResult>(getSubmitActivityAttemptUrl(runId),
 
 export const getSubmitActivityAttemptMutationKey = () => ['submitActivityAttempt'] as const;
 
-export const getSubmitActivityAttemptMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+export const getSubmitActivityAttemptMutationOptions = <TError = ErrorType<ActivityAnswerRejection | UnauthorizedResponse | NotFoundResponse | ActivityAnswerConflict>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext> => {
 
@@ -1192,10 +1194,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SubmitActivityAttemptMutationResult = NonNullable<Awaited<ReturnType<typeof submitActivityAttempt>>>
     export type SubmitActivityAttemptMutationBody = BodyType<ActivityAttemptInput>
-    export type SubmitActivityAttemptMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>
+    export type SubmitActivityAttemptMutationError = ErrorType<ActivityAnswerRejection | UnauthorizedResponse | NotFoundResponse | ActivityAnswerConflict>
     export type SubmitActivityAttemptMutationVariables = {runId: string;data: BodyType<ActivityAttemptInput>}
 
-    export const useSubmitActivityAttempt = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | ConflictResponse>,
+    export const useSubmitActivityAttempt = <TError = ErrorType<ActivityAnswerRejection | UnauthorizedResponse | NotFoundResponse | ActivityAnswerConflict>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitActivityAttempt>>, TError,SubmitActivityAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof submitActivityAttempt>>,

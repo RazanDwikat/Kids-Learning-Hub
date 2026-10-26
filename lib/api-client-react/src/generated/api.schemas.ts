@@ -242,6 +242,41 @@ export interface ChildDashboard {
   rewards: number;
 }
 
+/**
+ * Guaranteed pre-write rejection. Only HTTP 400 with this code permits editing pending answers.
+ */
+export type ActivityAnswerRejectionCode = typeof ActivityAnswerRejectionCode[keyof typeof ActivityAnswerRejectionCode];
+
+
+export const ActivityAnswerRejectionCode = {
+  ACTIVITY_ANSWER_REJECTED: 'ACTIVITY_ANSWER_REJECTED',
+} as const;
+
+export interface ActivityAnswerRejection {
+  /** Human-readable text; not a recovery discriminator. */
+  error: string;
+  /** Guaranteed pre-write rejection. Only HTTP 400 with this code permits editing pending answers. */
+  code: ActivityAnswerRejectionCode;
+}
+
+/**
+ * Never proof that an earlier submission was not saved.
+ */
+export type ActivityAnswerConflictCode = typeof ActivityAnswerConflictCode[keyof typeof ActivityAnswerConflictCode];
+
+
+export const ActivityAnswerConflictCode = {
+  ACTIVITY_REQUEST_ID_CONFLICT: 'ACTIVITY_REQUEST_ID_CONFLICT',
+  ACTIVITY_RUN_COMPLETE: 'ACTIVITY_RUN_COMPLETE',
+  ACTIVITY_QUESTION_NOT_CURRENT: 'ACTIVITY_QUESTION_NOT_CURRENT',
+} as const;
+
+export interface ActivityAnswerConflict {
+  error: string;
+  /** Never proof that an earlier submission was not saved. */
+  code: ActivityAnswerConflictCode;
+}
+
 export interface ApiError {
   error: string;
 }

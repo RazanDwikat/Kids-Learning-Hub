@@ -7,6 +7,10 @@
  */
 
 export * from './activityAnswer';
+export * from './activityAnswerConflict';
+export * from './activityAnswerConflictCode';
+export * from './activityAnswerRejection';
+export * from './activityAnswerRejectionCode';
 export * from './activityAttemptInput';
 export * from './activityAttemptResult';
 export * from './activityFeedback';
