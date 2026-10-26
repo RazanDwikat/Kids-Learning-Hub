@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zUEBWV9TnRjoa2dLgYTmI"
+uri = "file://artifacts/little-sprout-demo/public/audio/bg_music.mp3"
+type = "audio"
+title = "Little Sprout playful instrumental bed"
+description = "Generated music: Playful warm acoustic instrumental for a children Grade 1 learning app demo, marimba, pizzicato strings, soft brushed rhythm, 112 BPM. Curious gentle joyful mood, clear percussive ac…"

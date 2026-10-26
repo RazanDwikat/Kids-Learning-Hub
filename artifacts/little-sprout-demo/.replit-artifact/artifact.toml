@@ -1,0 +1,29 @@
+kind = "video"
+videoAspectRatio = "16:9"
+previewPath = "/little-sprout-demo/"
+title = "Little Sprout — Short Demo"
+description = "Short product demo of the existing Little Sprout learning app, showing interactive story learning, fresh review sessions, homework adventures and parent rewards."
+version = "1.0.0"
+id = "artifacts/little-sprout-demo"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/little-sprout-demo/" ]
+localPort = 19753
+
+[services.development]
+run = "pnpm --filter @workspace/little-sprout-demo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/little-sprout-demo", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/little-sprout-demo/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19753"
+BASE_PATH = "/little-sprout-demo/"
