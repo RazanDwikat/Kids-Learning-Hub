@@ -2,6 +2,7 @@
 
 # compiled output
 dist
+dist-native
 tmp
 out-tsc
 *.tsbuildinfo
@@ -44,6 +45,17 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
+# Local caches and authoring infrastructure (not runtime dependencies)
 .cache/
 .local/
+.agents/
+.replit
+.replitignore
+**/.replit-artifact/
+replit.md
+scripts/post-merge.sh
+/generated-artifacts/
+.env
+.env.*
+!.env.example
+static-build/
