@@ -1,24 +1,19 @@
 import { setBaseUrl } from '@workspace/api-client-react';
 import { Platform } from 'react-native';
+import { nativeApiOrigin } from './apiOrigin';
 
 const REQUEST_TIMEOUT_MS = 12000;
 const NETWORK_MESSAGE = 'Could not connect to your garden. Check your connection and tap Retry.';
 const TIMEOUT_MESSAGE = 'The connection took too long. Tap Retry to try again.';
 
-// Native bundles need an absolute API origin. Web uses its own origin: the
-// preview gateway already routes /api to Express, without a cross-site fetch.
-const domain = process.env.EXPO_PUBLIC_DOMAIN;
-const validDomain = typeof domain === 'string' &&
-  domain.length <= 253 &&
-  (domain === 'localhost' || domain.split('.').length >= 2) &&
-  domain.split('.').every(label => /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(label));
-
-export const apiConfigError = Platform.OS === 'web' || validDomain
-  ? null
-  : 'The garden connection is not configured. Please reopen the preview or contact support.';
+// Web always uses /api on its own origin. Native needs a reachable API origin.
+const configuredUrl = process.env.EXPO_PUBLIC_API_URL;
+const nativeOrigin = nativeApiOrigin(configuredUrl, __DEV__);
+export const apiConfigError = Platform.OS === 'web' || nativeOrigin
+  ? null : 'The garden connection is not configured. Set EXPO_PUBLIC_API_URL to the API origin (HTTPS in production).';
 
 export function configureLearningApi() {
-  setBaseUrl(Platform.OS === 'web' ? null : validDomain ? `https://${domain}` : null);
+  setBaseUrl(Platform.OS === 'web' ? null : nativeOrigin);
 }
 
 export function isNetworkError(error: unknown) {

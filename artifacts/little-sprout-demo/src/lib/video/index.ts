@@ -14,7 +14,6 @@ export type {
   VideoAudioState,
 } from './hooks';
 
-export { WorkspaceControlledVideo } from './controls';
 
 export {
   MediaFrame,

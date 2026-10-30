@@ -2,10 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
-// Start the managed API workflow before running these tests. The shared proxy
-// exercises the same routing as the Expo client; never spawn a second service.
+// Run against a development server and disposable database.
 test("anonymous child lessons persist, isolate, gate completion and deduplicate retries", async () => {
-  const base = "http://localhost:80/api";
+  const base = process.env.TEST_API_URL || "http://127.0.0.1:3000/api";
   async function call(path, method = "GET", token, body) {
     const response = await fetch(base + path, {
       method,
@@ -14,7 +13,7 @@ test("anonymous child lessons persist, isolate, gate completion and deduplicate 
     });
     return { status: response.status, data: await response.json() };
   }
-    assert.equal((await call("/healthz")).status, 200, "start the managed API workflow before testing");
+    assert.equal((await call("/healthz")).status, 200, "start the API before testing");
     assert.equal((await call("/learning/state")).status, 401);
     assert.equal((await call("/learning/state", "GET", "invalid")).status, 401);
     const one = await call("/learning/session", "POST");

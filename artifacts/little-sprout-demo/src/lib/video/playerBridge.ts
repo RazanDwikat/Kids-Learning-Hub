@@ -1,9 +1,4 @@
-// Shared state between the playback wrapper (controls.tsx), the workspace
-// control protocol (workspaceControls.ts), and the useVideoPlayer hook.
-// Module-level so the controls work with any VideoTemplate that calls
-// useVideoPlayer -- no props are threaded through the video component. Only
-// the iframed preview mutates this state; the export path keeps the defaults
-// below, so exported playback is untouched.
+// Shared local state for the optional animated walkthrough scenes.
 
 export interface ScenePlayback {
   sceneKeys: string[];
@@ -30,7 +25,7 @@ export interface PlayerBridgeState {
   currentIndex: number;
   /** null until an audio layer registers through useVideoAudio. */
   audioMuted: boolean | null;
-  /** True while the workspace holds the claim (see workspaceControls.ts). */
+  /** Reserved control ownership flag for the local scene player. */
   workspaceOwned: boolean;
   /** True while the scaffold's placeholder scene is mounted (useVideoPlaceholder). */
   placeholderMounted: boolean;

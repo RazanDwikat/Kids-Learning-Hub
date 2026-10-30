@@ -1,14 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Repeat, Volume2, VolumeX, ChevronDown, ChevronUp } from 'lucide-react';
-import VideoTemplate, { SCENE_DURATIONS } from './VideoTemplate';
-import { useSceneControls } from './useSceneControls';
-import { SCENE_DETAILS } from './sceneMeta';
-function Status({c,onJump}:{c:ReturnType<typeof useSceneControls>;onJump:(i:number)=>void}){const [elapsed,setElapsed]=useState(0);const base=useRef(0);useEffect(()=>{base.current=0;setElapsed(0)},[c.tick]);useEffect(()=>{if(c.paused)return;const start=performance.now();const id=setInterval(()=>setElapsed(base.current+performance.now()-start),60);return()=>{clearInterval(id);base.current+=performance.now()-start}},[c.tick,c.paused]);const format=(ms:number)=>`${Math.floor(ms/60000)}:${Math.floor(ms/1000)%60<10?'0':''}${Math.floor(ms/1000)%60}`;return <><div className="segments">{c.keys.map((k,i)=><button key={k} aria-label={`Jump to ${SCENE_DETAILS[k].title}`} onClick={()=>onJump(i)}><i style={{transform:`scaleX(${i===c.activeIndex?Math.min(1,elapsed/c.duration):0})`}}/></button>)}</div><span className="timer">{c.activeIndex+1}/{c.keys.length} &nbsp; {format(c.start+Math.min(elapsed,c.duration))} / {format(c.total)}</span></>}
-export default function VideoWithControls(){
- const c=useSceneControls(SCENE_DURATIONS);const [muted,setMuted]=useState(false);const [collapsed,setCollapsed]=useState(false);const [hover,setHover]=useState(false);
- useEffect(()=>{if(!c.paused)return;const all=document.getAnimations().filter(a=>a.playState==='running');all.forEach(a=>a.pause());return()=>all.forEach(a=>a.play())},[c.paused]);
- if(window.self===window.top)return <VideoTemplate/>;
- const jump=(i:number)=>{c.jumpTo(i);const d=SCENE_DETAILS[c.keys[i]];window.parent.postMessage({type:'REPLIT_VIDEO_SCENE_SELECTED',payload:{sceneIndex:i,sceneCount:c.keys.length,sceneTitle:d.title,filePath:d.filePath,lineNumber:1}},'*')};
- const visible=!collapsed||hover;
- return <div style={{position:'relative'}}><VideoTemplate key={c.mountKey} durations={c.durations} paused={c.paused} muted={muted} onSceneChange={c.onSceneChange}/><div className="controls" onPointerEnter={e=>{if(e.pointerType==='mouse')setHover(true)}} onPointerLeave={()=>setHover(false)} onPointerDown={e=>{if(e.pointerType!=='mouse')setCollapsed(false)}}><div className="bar" style={{transform:visible?'translateY(0)':'translateY(100%)',opacity:visible?1:0}}><button aria-label={c.paused?'Play':'Pause'} onClick={c.togglePause}>{c.paused?<Play/>:<Pause/>}</button><button aria-label="Loop current scene" aria-pressed={c.locked} onClick={c.toggleLock} style={{color:c.locked?'#ffe7a9':undefined}}><Repeat/></button><button aria-label={muted?'Unmute':'Mute'} onClick={()=>setMuted(v=>!v)}>{muted?<VolumeX/>:<Volume2/>}</button><Status c={c} onJump={jump}/><button aria-label={collapsed?'Show controls':'Hide controls'} onClick={()=>{setCollapsed(v=>!v);setHover(false)}}>{collapsed?<ChevronUp/>:<ChevronDown/>}</button></div></div></div>
+import { useState } from 'react';
+
+const demoLink = 'https://drive.google.com/file/d/1i21QSDuVHp4lJEj1QpC_zUCvFuciONcm/view?usp=sharing';
+const recording = import.meta.env.VITE_DEMO_VIDEO_URL;
+
+export default function VideoWithControls() {
+  const [failed, setFailed] = useState(false);
+  return (
+    <main style={{ minHeight: '100vh', display: 'grid', placeContent: 'center', padding: 24,
+      background: '#fff9ef', color: '#397567', fontFamily: 'sans-serif', textAlign: 'center' }}>
+      <h1>Little Sprout — App walkthrough</h1>
+      {recording && !failed ? (
+        <video src={recording} controls playsInline preload="metadata" onError={() => setFailed(true)}
+          style={{ width: 'min(100%, 1100px)', maxHeight: '75vh', margin: 'auto' }} />
+      ) : (
+        <p>{failed ? 'The hosted recording could not be loaded.' : 'The full narrated walkthrough is hosted on Google Drive.'}</p>
+      )}
+      <p><a href={demoLink} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>Watch the full demo on Google Drive</a></p>
+    </main>
+  );
 }

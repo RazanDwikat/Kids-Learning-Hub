@@ -10,7 +10,7 @@ export const curriculum = [
   { id: "addition-5", index: 4, title: "Bunny’s big challenge", caption: "One last little puzzle!", color: "#d5eddf", type: "choice", durationMs: null, a: 4, b: 3, options: [6, 7, 8], questionId: "addition-q5", answer: 7 },
 ] as const;
 
-// Data-only seed: schema changes are applied by the managed migration flow.
+// Data-only seed: apply schema explicitly before starting the server.
 // A rejected seed is awaited by its caller and retried on the next request.
 let seedPromise: Promise<void> | undefined;
 export function ensureLearningReady(): Promise<void> {

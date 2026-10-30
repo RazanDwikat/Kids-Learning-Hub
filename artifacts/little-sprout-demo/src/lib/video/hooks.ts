@@ -11,14 +11,6 @@ import {
 
 import { playerBridge } from './playerBridge';
 
-declare global {
-  interface Window {
-    __replitVideoPlayerMounted?: boolean;
-    __replitVideoTotalDurationMs?: number;
-    startRecording?: () => Promise<void>;
-    stopRecording?: () => void;
-  }
-}
 
 export interface SceneDurations {
   [key: string]: number;
@@ -72,21 +64,6 @@ export function useVideoPlayer(
   // Time left in the current scene, carried across pause/resume cycles
   const remainingMsRef = useRef<number | null>(null);
 
-  // Start recording on mount
-  useEffect(() => {
-    window.__replitVideoPlayerMounted = true;
-    // Declares the intended video length to the export renderer so a broken
-    // stop path cannot record past the end of the last scene.
-    window.__replitVideoTotalDurationMs = durationsArray.reduce(
-      (total, duration) => total + duration,
-      0,
-    );
-    window.startRecording?.();
-
-    return () => {
-      window.__replitVideoPlayerMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     playerBridge.registerPlayback({ sceneKeys, durationsMs: durationsArray });
@@ -117,7 +94,6 @@ export function useVideoPlayer(
       // Last scene just finished playing
       if (currentScene >= totalScenes - 1) {
         if (!hasEnded) {
-          window.stopRecording?.();
           setHasEnded(true);
           onVideoEnd?.();
         }
@@ -184,10 +160,7 @@ export function useVideoAudio(): VideoAudioState {
 }
 
 /**
- * Marks the scaffold's placeholder scene. The playback registered while it
- * is mounted is published to the workspace as "no scenes", so the control
- * bar stays hidden until real scenes replace the placeholder. Only
- * ReplitLoadingScene calls this.
+ * Marks an empty scene for the local scene player.
  */
 export function useVideoPlaceholder() {
   useEffect(() => {

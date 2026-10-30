@@ -2,10 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
-// HTTP integration against the managed proxy; the owning agent starts the workflow.
+// HTTP integration against a development server and disposable database.
 test("child-owned activities persist every answer, deduplicate retries and award once", async () => {
   async function call(path, method = "GET", token, body) {
-    const response = await fetch(`http://localhost:80/api${path}`, {
+    const response = await fetch(`${process.env.TEST_API_URL || "http://127.0.0.1:3000/api"}${path}`, {
       method,
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
@@ -14,7 +14,7 @@ test("child-owned activities persist every answer, deduplicate retries and award
   }
   const first = await call("/learning/session", "POST");
   const second = await call("/learning/session", "POST");
-  assert.equal(first.status, 201, "start managed API workflow and push the database schema first");
+  assert.equal(first.status, 201, "start the API and initialize a development database first");
   assert.equal(second.status, 201);
   const token = first.data.token;
   assert.equal((await call("/activities")).status, 401);
