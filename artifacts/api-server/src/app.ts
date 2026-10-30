@@ -3,7 +3,6 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { mountWeb } from "./web";
 
 const app: Express = express();
 
@@ -31,7 +30,6 @@ app.use(express.json({ limit: "8kb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
-mountWeb(app);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (typeof err === "object" && err !== null && "status" in err) {

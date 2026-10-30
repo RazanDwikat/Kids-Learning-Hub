@@ -104,14 +104,8 @@ function Gallery() {
           Component Preview Server
         </h1>
         <p className="text-gray-500 mb-4">
-          Browse the Little Sprout design prototypes. These do not save learning progress.
+          This server renders individual components for the workspace canvas.
         </p>
-        <ul className="mt-6 space-y-3">
-          {Object.keys(discoveredModules).map(key => {
-            const name = key.replace('./components/mockups/', '').replace(/\.tsx$/, '');
-            return <li key={key}><a className="text-green-800 underline" href={`${getBasePath()}/preview/${name}`}>{name}</a></li>;
-          })}
-        </ul>
         <p className="text-sm text-gray-400">
           Access component previews at{" "}
           <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">

@@ -1,0 +1,974 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zUEBWV9TnRjoa2dLgYTmI"
+uri = "file://artifacts/little-sprout-demo/public/audio/bg_music.mp3"
+type = "audio"
+title = "Little Sprout playful instrumental bed"
+description = "Generated music: Playful warm acoustic instrumental for a children Grade 1 learning app demo, marimba, pizzicato strings, soft brushed rhythm, 112 BPM. Curious gentle joyful mood, clear percussive ac…"
+logical_id = "7fe81c4e-2488-40ca-a353-dad79ca8b298"
+
+[[outputs]]
+id = "nNfX97_XObS5Hjick62Ie"
+uri = "file://artifacts/little-sprout-demo/public/audio/walkthrough_music.mp3"
+type = "audio"
+title = "Patient instrumental for the detailed Little Sprout walkthrough"
+description = "Generated music: Gentle unobtrusive acoustic instrumental for a detailed educational app walkthrough aimed at parents. Warm marimba, soft acoustic guitar, light brushed percussion, 100 BPM steady pul…"
+logical_id = "c04f2d5a-18b7-4510-8550-e7fbc9ddaee2"
+
+[[outputs]]
+id = "A046WJLR7gmiihWiFNpuP"
+uri = "file://generated-artifacts/little-sprout-female/audio/intro.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: بداية القصة"
+description = "Text-to-speech audio: هسّا بفتح بداية الدرس. مكتوب إنه خمس مشاهد: مشهدين قصة متحركة، وبعدهم ثلاث أنشطة. بكبس تشغيل القصة، ومنشوف الأرنب والتفاحات والمشهد وهو بتحرّك، مش صورة ثابتة. القصة بتشرح كيف مج…"
+logical_id = "8a0d06d2-7464-4b74-b070-b6f4c652e6fb"
+
+[[outputs]]
+id = "VljfF1igYJ87hFli_Pvnz"
+uri = "file://generated-artifacts/little-sprout-female/audio/home.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الصفحة الرئيسية والتمرير"
+description = "Text-to-speech audio: أهلاً، أنا هسّا رح أفرجيكم المشروع من جوّا التطبيق، صفحة صفحة. هاي الصفحة الرئيسية، وفيها قصة الجمع، والواجبات، والتدريب. بنزل شوي بالسكرول عشان نشوف مسار الصف والتقدّم المحفوظ.…"
+logical_id = "9b62c07e-e83f-4031-9d0d-2f3f7056b18d"
+
+[[outputs]]
+id = "RRhrzLZ_hEY2VfaytzbFJ"
+uri = "file://generated-artifacts/little-sprout-female/audio/learn.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الصف والمادة وموضوع الجمع"
+description = "Text-to-speech audio: من مسار المدرسة بفتح الصف الأول، وبختار الرياضيات. هاي صفحة المادة، ومنها بفتح موضوع الجمع. هون كمان في مدخل للواجب والتدريب. بنزل لتحت وبشوف المواضيع المقفولة؛ يعني مش كل عنوان…"
+logical_id = "6c322a3e-2830-4841-95d0-7ec1a1f952f4"
+
+[[outputs]]
+id = "NaScLWLllliYfNtoO6ugp"
+uri = "file://generated-artifacts/little-sprout-female/audio/story.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: أزرار القصة والانتقال بالسكرول"
+description = "Text-to-speech audio: خلّيني أجرّب أزرار القصة. هون بوقف التشغيل، وبرجعه. هذا الزر بكتم الصوت وبرجعه، وهذا بعيد المشهد من أوله. بكبس التالي للمشهد الثاني. وبقدر كمان أتنقّل بالسكرول بين المشاهد؛ هسّا…"
+logical_id = "e5057074-5b99-4cdd-9353-5eb946f7d4b9"
+
+[[outputs]]
+id = "gmH4LF9-1_fEJ6AqZjZjL"
+uri = "file://generated-artifacts/little-sprout-female/audio/drag.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: سحب التفاحات وتجربة الإجابات"
+description = "Text-to-speech audio: هون النشاط عملي. بمسك التفاحة وبسحبها لجهة الأرنب. وبقدر أنقل التفاحة بالكبس كمان، كبديل للسحب. لما تكتمل المجموعة بصير فينا نكمل. بالسؤال اللي بعده بجرّب جواب غلط أولاً؛ التطبي…"
+logical_id = "1faf2676-37eb-4d0c-bd29-6ec71f4b2a28"
+
+[[outputs]]
+id = "YKWBSzSufOmoiDld3smAI"
+uri = "file://generated-artifacts/little-sprout-female/audio/help.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: المساعدة وإنهاء الدرس"
+description = "Text-to-speech audio: بكبس ورّجيني كيف أعدّ، وبتظهر التفاحات عشان أفهم المجموعتين. ثلاث تفاحات واثنتين بصيروا خمسة، فبختار خمسة وبتظهر الإجابة الصحيحة. بكمل للتحدي الأخير: أربعة وثلاثة بيساووا سبعة. …"
+logical_id = "ac5299d3-5c73-4c01-a36e-e26b9d7a9848"
+
+[[outputs]]
+id = "fvI_8fmQGQ6puhyc6bc-F"
+uri = "file://generated-artifacts/little-sprout-female/audio/review.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: مراجعة جديدة مع حفظ الإنجاز"
+description = "Text-to-speech audio: من هون بفتح مراجعة القصة. هاي مش مسح للإنجاز؛ هي محاولة مراجعة جديدة، بتخلّيني أتفاعل مع المشاهد من أول وجديد. بطلع من القصة وبرجع للصفحة الرئيسية، وبنزل للتقدّم. زي ما شايفين، …"
+logical_id = "0387d4eb-fa25-4139-8595-2a146dd8332c"
+
+[[outputs]]
+id = "FIl7e5z7JtvYqbIRgALvd"
+uri = "file://generated-artifacts/little-sprout-female/audio/rewardcreate.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: إضافة مكافأة من لوحة الأهل"
+description = "Text-to-speech audio: قبل ما نبدأ الواجب، بدي أجهّز مكافأة. بفتح صفحة الأهل، ومن لوحة التحكم بكبس إضافة أول مكافأة. بكتب عنوان بسيط، ورسالة للطفل، وبختار الفئة. بترك خيار إدخالها بالسحب شغّال، وبكبس …"
+logical_id = "7c8ee982-eec6-412a-88e4-6e00221c4c32"
+
+[[outputs]]
+id = "2hX5TG9plOJkokrWqJqJR"
+uri = "file://generated-artifacts/little-sprout-female/audio/rewardmanage.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تعديل المكافآت والاختيار والحذف"
+description = "Text-to-speech audio: بفتح إدارة المكافآت. من القلم بقدر أعدّل الرسالة وأحفظها. والمفتاح بخلّيني أطلع المكافأة من السحب أو أرجعها، من غير ما أحذفها. رح أضيف مكافأة مؤقتة للتجربة، وبعدين أكبس سلة الحذ…"
+logical_id = "b39eb367-003e-4a30-80a7-62b6e3bced36"
+
+[[outputs]]
+id = "qI6iS7KeEaF09BcB4_WQs"
+uri = "file://generated-artifacts/little-sprout-female/audio/homework.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: اختيار صفحة الكتاب ومعاينة الأسئلة"
+description = "Text-to-speech audio: ننتقل للواجب. هون بختار صفحة من الكتاب بدل التصوير. بجرّب الصفحات خمسة وسبعة وثمانية، وبشوف كيف اسم الدرس والأسئلة بيتغيّروا. برجع للصفحة الرابعة، وهي واجب جمع. قبل البداية بقدر…"
+logical_id = "aba6b5be-d5fc-4223-a028-a7a1ad6e026d"
+
+[[outputs]]
+id = "wUfxKwlNRplWUSFTrnGxV"
+uri = "file://generated-artifacts/little-sprout-female/audio/trail.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: حل واجب كامل على الخريطة"
+description = "Text-to-speech audio: هاي خريطة المغامرة. بفتح المحطة الحالية، وبكتب جواب السؤال وبكبس تأكيد الإجابة. إذا احتجت مساعدة في زر للتلميح. لما يكون الجواب صحيح، الأرنب بتحرّك للمحطة اللي بعدها. هسّا رح أك…"
+logical_id = "e4785809-0192-4745-92ef-3ace386f21d8"
+
+[[outputs]]
+id = "sYStAYmpZyIczG8UV7fLl"
+uri = "file://generated-artifacts/little-sprout-female/audio/celebration.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الاحتفال والمكافأة والنتيجة"
+description = "Text-to-speech audio: وصلنا للنهاية، وظهر الاحتفال. هون بنشوف عدد المحطات والمحاولات. بكبس شوف احتفالي، وهاي المكافأة اللي جهّزناها من لوحة الأهل، معها الرسالة للطفل. من هون بقدر أرجع للبيت، أو أفتح …"
+logical_id = "c4fa2afb-975e-49e4-81c2-de8ab7e2d718"
+
+[[outputs]]
+id = "Z1RCuhR8HQHa3ntAHS_ak"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: الامتحان وحفظ المحاولة ومتابعتها"
+description = "Text-to-speech audio: هسّا ببدّل من التدريب للامتحان وببدأ مغامرة الكنز. بحل أول محطة، وبطلع للصفحة الرئيسية. لما أرجع للامتحان بلاقي متابعة المغامرة، فبكمل من مكاني. رح أمشي بباقي أنواع الأسئلة لحد …"
+logical_id = "f6c0692a-cada-43f1-9a75-dc95dae8e475"
+
+[[outputs]]
+id = "VXU4IRmMKNCckPXH_CIJE"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تجربة أنواع أسئلة التدريب"
+description = "Text-to-speech audio: من التدريب ببدأ محاولة جديدة. في اختيار جواب، وترتيب قطع عشان أبني معادلة، ومطابقة كل جمع مع ناتجه. وبسؤال العدّ بكبس التفاحات واحدة واحدة، وبعدها بكتب الجواب. كمان بجرّب التلمي…"
+logical_id = "357de8d4-2ab6-4a25-bf13-6169e03e080d"
+
+[[outputs]]
+id = "2GWuDhGHq0PjVfZLFVv30"
+uri = "file://generated-artifacts/little-sprout-female/audio/dashboard.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: لوحة الأهل والتقدّم والتحليلات"
+description = "Text-to-speech audio: بعد التجربة بفتح لوحة الأهل. بنزل بالسكرول عشان نشوف الملخّص والأنشطة والمحاولات اللي انحفظت. بفتح تقدّم الطفل، وبعدها التحليلات. هون بنشوف نقاط القوة والمفاهيم اللي بدها تدريب،…"
+logical_id = "c9bf01b9-da10-4ee0-a68c-d379e49d5ac7"
+
+[[outputs]]
+id = "6wvv_EPc0UJz9WRqKu9JQ"
+uri = "file://generated-artifacts/little-sprout-female/audio/closing.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: نهاية الجولة العملية"
+description = "Text-to-speech audio: هيك مشينا بالمسارات الأساسية فعلياً: قصة متحركة، سكرول بين المشاهد، سحب وإجابات، واجب كامل، تدريب وامتحان، وإدارة مكافآت ومتابعة أهل. هاي جولة استخدام بالمشروع، مش ضمان إنه كل ح…"
+logical_id = "3aa43703-5b4e-4df8-b953-79ba7b039fec"
+
+[[outputs]]
+id = "CNRRF7mpkO6YceobPIUep"
+uri = "file://generated-artifacts/little-sprout-female/audio/profile.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: ملف الطفل والحفظ على الجهاز"
+description = "Text-to-speech audio: من صورة الحساب بفتح ملف الطفل، وبنزل لأشوف التقدّم والأنشطة والمكافآت. رح أعيد تحميل الصفحة، وبنرجع نشوف إن التقدّم موجود. مهم أوضح إنه الحفظ مرتبط بملف هالجهاز. ما في حالياً حس…"
+logical_id = "5288ea4c-0c3a-4e79-a702-d6c0fa0c748b"
+
+[[outputs]]
+id = "kC1URfFu0QwM0xAR4fvFg"
+uri = "file://generated-artifacts/little-sprout-female/audio/scan.mp3"
+type = "audio"
+title = "Lina Arabic female walkthrough: تجربة التصوير وحدود قراءة الصفحة"
+description = "Text-to-speech audio: خلّيني أفرجيكم خيار تصوير الواجب كمان. رح أفتح الكاميرا وألتقط لقطة اختبار؛ هون مستخدمة كاميرا افتراضية للتجربة، مش ورقة واجب حقيقية. بعد تحليل الصفحة بتظهر الرسالة بوضوح: قراءة…"
+logical_id = "c63a9675-abf7-46af-8c50-85157c857c5a"
+
+[[outputs]]
+id = "CJRJo2hKimsn6AUtWtBuV"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_intro.mp3"
+type = "audio"
+title = "Female presenter detailed practice_intro"
+description = "Text-to-speech audio: بفتح التدريب، وببدأ محاولة جديدة وبجرّب زر التلميح."
+logical_id = "c34a0f54-2123-4846-bfdf-d91cfd64b8b7"
+
+[[outputs]]
+id = "Jq4lZI1GU3V6QbTEOR4Ov"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_choice.mp3"
+type = "audio"
+title = "Female presenter detailed practice_choice"
+description = "Text-to-speech audio: هون بختار خمسة: تفاحتين وثلاثة بصيروا خمسة."
+logical_id = "67db5c1f-90f7-425a-91ba-7cf3c2809e26"
+
+[[outputs]]
+id = "9nbZoQbYMAGt6_npxAGci"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_pieces.mp3"
+type = "audio"
+title = "Female presenter detailed practice_pieces"
+description = "Text-to-speech audio: هسّا بركّب المعادلة قطعة قطعة. بجرّب التراجع عن آخر قطعة، وبعدين برجع أكمل: اثنين، زائد اثنين، يساوي أربعة."
+logical_id = "fcaba7cd-7f70-4112-b9d5-a84fe8bc0fb9"
+
+[[outputs]]
+id = "wgWXdGrkBy_2IJYm85xM-"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_match.mp3"
+type = "audio"
+title = "Female presenter detailed practice_match"
+description = "Text-to-speech audio: بالمطابقة بكبس عملية الجمع من اليسار، وبختار ناتجها من اليمين. وبكررها لكل مجموعة."
+logical_id = "a7dd920f-f126-49db-b612-795bf695b6c3"
+
+[[outputs]]
+id = "kOI1KniuBgE1AEhnLeeoe"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_count.mp3"
+type = "audio"
+title = "Female presenter detailed practice_count"
+description = "Text-to-speech audio: هون بكبس كل تفاحة مرة، وبنشوف رقم العدّ عليها. بعدين بكتب خمسة وبأكد الجواب."
+logical_id = "e3e304c2-270d-448c-9c75-a7b4a8725e0c"
+
+[[outputs]]
+id = "zUs0QVPcfCtj8RXnpHZPy"
+uri = "file://generated-artifacts/little-sprout-female/audio/practice_direct.mp3"
+type = "audio"
+title = "Female presenter detailed practice_direct"
+description = "Text-to-speech audio: وآخر سؤال: أربعة وثلاثة، سبعة. وهيك خلص التدريب."
+logical_id = "14fa1d8a-6247-4a97-b574-9509478217ee"
+
+[[outputs]]
+id = "__m61EiB-H_4-L0p1ISU4"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_pieces.mp3"
+type = "audio"
+title = "Female presenter detailed exam_pieces"
+description = "Text-to-speech audio: هاي المحطة الثانية. بركّب المعادلة وبأكدها، وبنشوف الأرنب وهو بكمل الطريق."
+logical_id = "7b7bf546-28cb-4af4-9a1f-803760db9642"
+
+[[outputs]]
+id = "hlr80MoQLu-tpRkTchbfe"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_intro.mp3"
+type = "audio"
+title = "Female presenter detailed exam_intro"
+description = "Text-to-speech audio: ببدّل للامتحان، وببدأ مغامرة الكنز. بحل أول محطة، وبطلع للبيت. لما أرجع، بكبس متابعة المغامرة عشان أكمل من مكاني."
+logical_id = "21fea149-3b24-4f4d-bc24-d9e708e693fe"
+
+[[outputs]]
+id = "id9sn0Bf6kuVwH9ODmOlz"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_match.mp3"
+type = "audio"
+title = "Female presenter detailed exam_match"
+description = "Text-to-speech audio: بالمحطة الثالثة بطابق كل عملية مع جوابها. براجع الأزواج، وبكبس تأكيد الإجابة."
+logical_id = "e0d5cc82-ea80-4035-bd53-3b5ec7641d7c"
+
+[[outputs]]
+id = "piFqgc5aGA_eFlV9fuSKE"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_direct.mp3"
+type = "audio"
+title = "Female presenter detailed exam_direct"
+description = "Text-to-speech audio: أربعة وثلاثة بيساووا سبعة. بكتبها وبأكد."
+logical_id = "10e8d955-dd61-4e33-8f71-3ce6fd67972e"
+
+[[outputs]]
+id = "XvHDQwXBvVqs3sVsnUovf"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_count.mp3"
+type = "audio"
+title = "Female presenter detailed exam_count"
+description = "Text-to-speech audio: هسّا بعدّ التفاحات واحدة واحدة، وبكتب العدد. بعدها بيفتح الطريق للمحطة اللي بعدها."
+logical_id = "875752ad-031b-4fc9-97b5-d0668796a178"
+
+[[outputs]]
+id = "pm8Rq3NrZyS_n-1d6D2QR"
+uri = "file://generated-artifacts/little-sprout-female/audio/exam_order.mp3"
+type = "audio"
+title = "Female presenter detailed exam_order"
+description = "Text-to-speech audio: وبالأخيرة برتّب واحد، اثنين، ثلاثة. وبوصل للكنز وبشوف نتيجة الامتحان."
+logical_id = "6d6d3a71-f5a8-460a-8d15-48f1d14ae5ce"
+
+[[outputs]]
+id = "oTvzdbb6fotkL96-s3u5L"
+uri = "file://generated-artifacts/little-sprout-female/little-sprout-female-arabic-walkthrough.mp4"
+type = "video"
+title = "ديمو Little Sprout — شرح عربي بصوت أنثوي"
+description = "تسجيل فعلي للتطبيق مع التنقّل والكبسات والتمرير وشرح القصص والواجبات والمكافآت وقسم الأهل. المدة ٦:٢٥، بصيغة MP4 وجودة 720p."
+logical_id = "4b73ce7d-2ffc-4720-b1cc-bcbcff6d8563"
+content_hash = "sha256:fc43700bdfc3b0481acf7a846d447f25678f19cad91a2c45f6f509f62f906e4f"
+size = 13484102
+mtime_ms = 1793050424817
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:cac56a7d-f81b-4246-b85e-78f4872a4114/4b73ce7d-2ffc-4720-b1cc-bcbcff6d8563/9876fc4c-9a0b-43c0-8865-5b1203accce7"
+storage_version_token = "1793051004460578"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "bgR2z8BG36T5yIm6ghnE1"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/scrollUp.mp3"
+type = "audio"
+title = "Action-locked Arabic female scrollUp"
+description = "Text-to-speech audio: وبرجع بالسكرول لأعلى الصفحة."
+logical_id = "4d1ceab6-db7b-45af-9a5a-5296c261db16"
+
+[[outputs]]
+id = "DuHtqn6oPu2JoHZZ9m2jD"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/scrollDown.mp3"
+type = "audio"
+title = "Action-locked Arabic female scrollDown"
+description = "Text-to-speech audio: بنزل بالسكرول عشان نشوف باقي الصفحة."
+logical_id = "f975566e-5f5e-4668-a115-dd8a6de4cd16"
+
+[[outputs]]
+id = "WPeAF5qQCQNNCi6oyf5Sk"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/homeOverview.mp3"
+type = "audio"
+title = "Action-locked Arabic female homeOverview"
+description = "Text-to-speech audio: هاي الصفحة الرئيسية. منها بنوصل للقصة، والواجبات، والتدريب، وكمان مسار المدرسة وتقدّم الطفل."
+logical_id = "821c3a96-be58-429b-a7b2-43642cb071b7"
+
+[[outputs]]
+id = "BPt9E_mkiv9EYaKFgeIzA"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/projectIntro.mp3"
+type = "audio"
+title = "Action-locked Arabic female projectIntro"
+description = "Text-to-speech audio: أهلاً! قبل ما أبدأ الجولة، خلّيني أوضح شو هو المشروع. ليتل سبراوت تطبيق تعليمي للأطفال بالصف الأول، بيحوّل تعلّم الرياضيات لقصة وأنشطة تفاعلية. الطفل بيتعلّم مع الأرنب، وبيحل وا…"
+logical_id = "7412bace-dac5-4453-b5e5-4c54cbc762be"
+
+[[outputs]]
+id = "_q25Rs0ollmiu3QjucEpk"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/home.mp3"
+type = "audio"
+title = "Action-locked Arabic female home"
+description = "Text-to-speech audio: برجع للصفحة الرئيسية."
+logical_id = "7a33fb59-0885-43fb-b169-c1862675f3ce"
+
+[[outputs]]
+id = "fy1fv5LmqXQ4e0YvecFoD"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/learn.mp3"
+type = "audio"
+title = "Action-locked Arabic female learn"
+description = "Text-to-speech audio: بفتح صفحة التعلّم."
+logical_id = "ab1f4674-174e-4223-a9be-356281313bf6"
+
+[[outputs]]
+id = "op2NKG8uplDRIx3kbpDiP"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/grade.mp3"
+type = "audio"
+title = "Action-locked Arabic female grade"
+description = "Text-to-speech audio: بختار الصف الأول."
+logical_id = "7a7efc1c-5baa-40e7-b564-3839bb04ed3c"
+
+[[outputs]]
+id = "h9V77i5P9z1iXi_r3sSTG"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/math.mp3"
+type = "audio"
+title = "Action-locked Arabic female math"
+description = "Text-to-speech audio: وبفتح مادة الرياضيات."
+logical_id = "95ea54e8-7840-4f2c-9719-f3b7e5b0cd0e"
+
+[[outputs]]
+id = "A99gQqYu9ljl-34WYNxgT"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/topic.mp3"
+type = "audio"
+title = "Action-locked Arabic female topic"
+description = "Text-to-speech audio: هلا بفتح موضوع الجمع."
+logical_id = "bb1f5ab2-80b7-4492-9299-e0ccb0615da1"
+
+[[outputs]]
+id = "MnEaakBqaTrNjJwi9ys2g"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/locked.mp3"
+type = "audio"
+title = "Action-locked Arabic female locked"
+description = "Text-to-speech audio: هاي المواضيع لسه مقفولة. الدرس اللي عم نجرّبه اليوم هو الجمع."
+logical_id = "9c9d545d-8e1d-4767-aa97-10a1ae8ee1d9"
+
+[[outputs]]
+id = "Lxy3CvtikmZq28gaMqk1-"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/playStory.mp3"
+type = "audio"
+title = "Action-locked Arabic female playStory"
+description = "Text-to-speech audio: بكبس تشغيل القصة، وبنترك المشهد يتحرّك شوي."
+logical_id = "36793a96-501e-457d-ab0e-70dba9ed63d9"
+
+[[outputs]]
+id = "C74k-wX4tUUgpK-MCpV0a"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/lessonIntro.mp3"
+type = "audio"
+title = "Action-locked Arabic female lessonIntro"
+description = "Text-to-speech audio: الدرس فيه خمس مشاهد: مشهدين قصة متحركة، وبعدهم ثلاث أنشطة للطفل."
+logical_id = "e5b4efe3-a72c-4e8c-a045-6797ce5ec253"
+
+[[outputs]]
+id = "TfsNWB5nhN0xpzN2x_n8_"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/resume.mp3"
+type = "audio"
+title = "Action-locked Arabic female resume"
+description = "Text-to-speech audio: وبرجع أشغّله."
+logical_id = "a3f0c80f-f5e4-4fd6-981e-1cc0c3e85405"
+
+[[outputs]]
+id = "DrSEEi1KuIfdyLK71Tygw"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/mute.mp3"
+type = "audio"
+title = "Action-locked Arabic female mute"
+description = "Text-to-speech audio: هلا بكتم صوت القصة."
+logical_id = "0e2e551f-3406-4eb7-86f1-8abb88d862d5"
+
+[[outputs]]
+id = "QaDkJZ9PSzdMjXZ9ika0L"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/pause.mp3"
+type = "audio"
+title = "Action-locked Arabic female pause"
+description = "Text-to-speech audio: هون بوقف تشغيل المشهد."
+logical_id = "f28e08c9-1082-4f99-bf24-cb62544b09e3"
+
+[[outputs]]
+id = "mQnt-ruz6C0JNQMStmkty"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/unmute.mp3"
+type = "audio"
+title = "Action-locked Arabic female unmute"
+description = "Text-to-speech audio: وبرجع صوت القصة."
+logical_id = "c939dc5e-9fc2-42c4-8ce1-e14d15bdfb9c"
+
+[[outputs]]
+id = "glLNqHC59DUFE4P9sDNmq"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/replay.mp3"
+type = "audio"
+title = "Action-locked Arabic female replay"
+description = "Text-to-speech audio: ومن هون بعيد نفس المشهد من أوله."
+logical_id = "575f8d3f-67b0-4a06-9935-ff95ed9323bf"
+
+[[outputs]]
+id = "wYV8keD7g6k0oC-9bkGJf"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/drag.mp3"
+type = "audio"
+title = "Action-locked Arabic female drag"
+description = "Text-to-speech audio: بمسك التفاحة وبسحبها باتجاه الأرنب."
+logical_id = "09ef62c7-8c13-4fb6-b1c7-c0ab372733c0"
+
+[[outputs]]
+id = "f4mEkvCMN4A1nWQA5_Zfx"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/next.mp3"
+type = "audio"
+title = "Action-locked Arabic female next"
+description = "Text-to-speech audio: بكبس التالي عشان أنتقل للمشهد اللي بعده."
+logical_id = "b7f8d1ea-8f2d-4765-b090-23f6965c6f95"
+
+[[outputs]]
+id = "g2u7-WPg1x7Cvctx2gpQO"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/storyScroll.mp3"
+type = "audio"
+title = "Action-locked Arabic female storyScroll"
+description = "Text-to-speech audio: وبنزل بالسكرول للمشهد التفاعلي."
+logical_id = "23ef29e0-6933-4582-8b54-a2e5f996e0fa"
+
+[[outputs]]
+id = "-tb3miV-Px3Eznz2XgBjf"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/countHelp.mp3"
+type = "audio"
+title = "Action-locked Arabic female countHelp"
+description = "Text-to-speech audio: بفتح المساعدة عشان يورجيني كيف أعدّ."
+logical_id = "87f7d51c-53a0-4680-898a-91a029376786"
+
+[[outputs]]
+id = "NtJCQ9gt4tcVyHxwwQdlP"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/five.mp3"
+type = "audio"
+title = "Action-locked Arabic female five"
+description = "Text-to-speech audio: ثلاثة واثنين بيساووا خمسة. بختار خمسة."
+logical_id = "c8538e5d-0ede-497c-beb7-b9c87d254030"
+
+[[outputs]]
+id = "Ayyx_PPgoKL0W8TW2m3Li"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/tapApple.mp3"
+type = "audio"
+title = "Action-locked Arabic female tapApple"
+description = "Text-to-speech audio: وبقدر أنقل التفاحة بالكبس كمان، بدل السحب."
+logical_id = "c63c1dbb-f4d4-4336-973c-e6c20fd28eb6"
+
+[[outputs]]
+id = "d2Rdt45wWTjhfAiY4yeGT"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/wrong.mp3"
+type = "audio"
+title = "Action-locked Arabic female wrong"
+description = "Text-to-speech audio: رح أختار أربعة عشان نشوف كيف بيتعامل مع الجواب الغلط."
+logical_id = "a94b84eb-406e-49e0-9fd1-7c828919b9a3"
+
+[[outputs]]
+id = "Nr4cNCaM0wqLY3z1hzPak"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/seven.mp3"
+type = "audio"
+title = "Action-locked Arabic female seven"
+description = "Text-to-speech audio: أربعة وثلاثة بيساووا سبعة. بختار سبعة."
+logical_id = "f02084cd-30fe-4813-bd07-c92b8ddc8a9c"
+
+[[outputs]]
+id = "S7j9Ybrct8uS3j77-Zwo5"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/finishLesson.mp3"
+type = "audio"
+title = "Action-locked Arabic female finishLesson"
+description = "Text-to-speech audio: بكبس إنهاء الدرس، وبتظهر شاشة الإنجاز."
+logical_id = "9d0d20f3-f189-4089-a3b3-de34b3f36ce8"
+
+[[outputs]]
+id = "WXgGfkGZ-0ez3wyw3WqAf"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/closeStory.mp3"
+type = "audio"
+title = "Action-locked Arabic female closeStory"
+description = "Text-to-speech audio: بطلع من مشاهد القصة."
+logical_id = "cbdbd68b-a8fb-4fa8-8328-094d9d8e62b6"
+
+[[outputs]]
+id = "p1jxDYQA-VbXSv59Sse6p"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/review.mp3"
+type = "audio"
+title = "Action-locked Arabic female review"
+description = "Text-to-speech audio: بفتح مراجعة القصة عشان أجرّبها من جديد."
+logical_id = "264c0304-57bb-432a-bdff-d51fe29d8209"
+
+[[outputs]]
+id = "zJCptc5I7oPjro6XvFWaI"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/goBack.mp3"
+type = "audio"
+title = "Action-locked Arabic female goBack"
+description = "Text-to-speech audio: برجع للصفحة السابقة."
+logical_id = "1f53a598-76b6-4720-945c-3b7d24a77b27"
+
+[[outputs]]
+id = "v8wP4ciwPoDL8zPDpn02Y"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/addFirst.mp3"
+type = "audio"
+title = "Action-locked Arabic female addFirst"
+description = "Text-to-speech audio: بكبس إضافة أول مكافأة."
+logical_id = "8d1db45e-5cfc-484a-abcd-6f11c44035dd"
+
+[[outputs]]
+id = "khRjcTz-Zuup-mr7gk5AM"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/parent.mp3"
+type = "audio"
+title = "Action-locked Arabic female parent"
+description = "Text-to-speech audio: هلا بفتح مساحة الأهل."
+logical_id = "cb9831a6-61bb-455e-844b-4ecee4d9efc3"
+
+[[outputs]]
+id = "aRyoFG_agVZ4fOkREPgYa"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/preserved.mp3"
+type = "audio"
+title = "Action-locked Arabic female preserved"
+description = "Text-to-speech audio: زي ما شايفين، إنجاز المشاهد الخمسة ضل محفوظ، مع إني فتحت مراجعة جديدة."
+logical_id = "540a0cc6-1786-4562-a981-5235b7155930"
+
+[[outputs]]
+id = "tPJJs_WlFj9ZYm3UzqbFF"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/category.mp3"
+type = "audio"
+title = "Action-locked Arabic female category"
+description = "Text-to-speech audio: بختار فئة النشاط للمكافأة."
+logical_id = "424c6729-aabc-49ad-8f24-bd8690c3b62c"
+
+[[outputs]]
+id = "EJOJ-dcZPsaGhZVLPJvkE"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/saveReward.mp3"
+type = "audio"
+title = "Action-locked Arabic female saveReward"
+description = "Text-to-speech audio: وبكبس حفظ المكافأة."
+logical_id = "5993a83d-4edb-4761-8b7e-26091ee073f2"
+
+[[outputs]]
+id = "g28LTKCY3YRSPzWYGC3Vm"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/rewardMessage.mp3"
+type = "audio"
+title = "Action-locked Arabic female rewardMessage"
+description = "Text-to-speech audio: وبكتب رسالة تشجيعية للطفل."
+logical_id = "df076a24-f6cc-4390-8754-cdf501893dc3"
+
+[[outputs]]
+id = "ktokyg2LxQQqSF5Ek_Q6Z"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/rewardTitle.mp3"
+type = "audio"
+title = "Action-locked Arabic female rewardTitle"
+description = "Text-to-speech audio: بكتب عنوان المكافأة: اختيار قصة قبل النوم."
+logical_id = "c24e245f-8952-4fa9-b52a-3a71959792b0"
+
+[[outputs]]
+id = "ullYNJyBQGk0gChumUay-"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/closeRewards.mp3"
+type = "audio"
+title = "Action-locked Arabic female closeRewards"
+description = "Text-to-speech audio: بسكر نافذة إدارة المكافآت."
+logical_id = "fce0e6ec-5cd5-4b2e-8c72-684e6d0bfb64"
+
+[[outputs]]
+id = "9gEPRO4VU3-1wVldnykuj"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/manage.mp3"
+type = "audio"
+title = "Action-locked Arabic female manage"
+description = "Text-to-speech audio: بفتح إدارة المكافآت المحفوظة."
+logical_id = "a32187f0-64b1-4b93-940a-4dfb6a7daa76"
+
+[[outputs]]
+id = "68ZqLEDvM6-Ro-73TFqKD"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/editReward.mp3"
+type = "audio"
+title = "Action-locked Arabic female editReward"
+description = "Text-to-speech audio: من القلم بفتح تعديل المكافأة."
+logical_id = "2a1f988b-9fda-4716-82e7-58679cfeaa7c"
+
+[[outputs]]
+id = "7IuhEmE9-JBlmJwSyJVUN"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/toggleOff.mp3"
+type = "audio"
+title = "Action-locked Arabic female toggleOff"
+description = "Text-to-speech audio: بطلع المكافأة من السحب، من غير ما أحذفها."
+logical_id = "ef2558b5-3cca-4a7c-92bb-1059da3a864e"
+
+[[outputs]]
+id = "LI3jrkGgglwLRVYEm4rmx"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/toggleOn.mp3"
+type = "audio"
+title = "Action-locked Arabic female toggleOn"
+description = "Text-to-speech audio: وبرجع أدخلها بالسحب."
+logical_id = "40053902-b27c-4b23-92db-3dd9b4c7d1a1"
+
+[[outputs]]
+id = "KxiVTHpjBSsn01jWVo90H"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/temporaryMessage.mp3"
+type = "audio"
+title = "Action-locked Arabic female temporaryMessage"
+description = "Text-to-speech audio: وبضيف رسالة قصيرة إلها."
+logical_id = "c17e3b60-cabc-4b78-a319-71c3bae5ac2b"
+
+[[outputs]]
+id = "MQeO1jGDE6XW0LaEjr3tJ"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/addReward.mp3"
+type = "audio"
+title = "Action-locked Arabic female addReward"
+description = "Text-to-speech audio: رح أضيف مكافأة مؤقتة، بس عشان نجرّب الحذف."
+logical_id = "b156179f-a425-4d7d-a27a-35ef6c6b0690"
+
+[[outputs]]
+id = "p3VUCGi7-3dz3MrgHK4FE"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/temporaryTitle.mp3"
+type = "audio"
+title = "Action-locked Arabic female temporaryTitle"
+description = "Text-to-speech audio: بكتب عنوان للمكافأة المؤقتة."
+logical_id = "d165fe3e-0020-4a45-bad1-a04ec066349f"
+
+[[outputs]]
+id = "jnymFPImj-2wBHP5CfQ4P"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/homework.mp3"
+type = "audio"
+title = "Action-locked Arabic female homework"
+description = "Text-to-speech audio: بفتح صفحة الواجب."
+logical_id = "5f79a101-80ac-4795-9b95-240dea03defb"
+
+[[outputs]]
+id = "rLh2WZ8SNO9ruQdsu1_uK"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/deleteReward.mp3"
+type = "audio"
+title = "Action-locked Arabic female deleteReward"
+description = "Text-to-speech audio: بكبس سلة الحذف للمكافأة المؤقتة."
+logical_id = "a44d6d09-5071-40c1-ab9e-7b70839b4e56"
+
+[[outputs]]
+id = "Rm_cWnR92QZNuMGSsUZQx"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/confirmDelete.mp3"
+type = "audio"
+title = "Action-locked Arabic female confirmDelete"
+description = "Text-to-speech audio: وبأكد إزالتها. المكافأة الأساسية بتضل موجودة."
+logical_id = "ce6c3651-6ff4-41bd-b22d-356e3245ef98"
+
+[[outputs]]
+id = "dGgBcXPKevNovQmesljnb"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/page5.mp3"
+type = "audio"
+title = "Action-locked Arabic female page5"
+description = "Text-to-speech audio: بختار الصفحة خمسة وبشوف معاينتها."
+logical_id = "80f982b7-14ca-435d-9bda-b815e72bbc63"
+
+[[outputs]]
+id = "pEiQAOIQ1v2mkCSYAvu2z"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/page8.mp3"
+type = "audio"
+title = "Action-locked Arabic female page8"
+description = "Text-to-speech audio: وهون معاينة الصفحة ثمانية."
+logical_id = "d636be43-af03-41f3-8d68-7125cf133f56"
+
+[[outputs]]
+id = "45asalr1nVYfQBZvM5mch"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/page4.mp3"
+type = "audio"
+title = "Action-locked Arabic female page4"
+description = "Text-to-speech audio: برجع للصفحة أربعة، عشان نحل واجب الجمع."
+logical_id = "1068d656-883b-4fa4-96b5-5e1089c86b8b"
+
+[[outputs]]
+id = "IEflqRhsUD-rPBoZg5zPz"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/page7.mp3"
+type = "audio"
+title = "Action-locked Arabic female page7"
+description = "Text-to-speech audio: وبجرّب الصفحة سبعة."
+logical_id = "99224fe1-124c-40c1-9581-e6c983df766b"
+
+[[outputs]]
+id = "oi3Y8yToelv9ol4-Sqd36"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/startHomework.mp3"
+type = "audio"
+title = "Action-locked Arabic female startHomework"
+description = "Text-to-speech audio: بكبس ابدأ هذا الواجب، وبتفتح خريطة المغامرة."
+logical_id = "5e94dba1-e718-4a92-bfa4-ee4759a325e2"
+
+[[outputs]]
+id = "ePuEXUfbCDv5XdMFyuASi"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/write.mp3"
+type = "audio"
+title = "Action-locked Arabic female write"
+description = "Text-to-speech audio: بكتب جواب المسألة الظاهرة."
+logical_id = "1a5d616a-d04b-43af-a205-8138e116c6ec"
+
+[[outputs]]
+id = "6sYtRiiVlOs31A1j3gqaP"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/openStop.mp3"
+type = "audio"
+title = "Action-locked Arabic female openStop"
+description = "Text-to-speech audio: بفتح المحطة الحالية على الخريطة."
+logical_id = "6b20b301-c7de-47f6-8eac-d5af3be1ac5d"
+
+[[outputs]]
+id = "o4z4kJpzKxDdFGio4zVwB"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/hint.mp3"
+type = "audio"
+title = "Action-locked Arabic female hint"
+description = "Text-to-speech audio: بكبس التلميح عشان أشوف المساعدة المتاحة."
+logical_id = "8b359466-5c67-4a73-bbd4-3810f5aa06a1"
+
+[[outputs]]
+id = "iA2f6fAO-Hvfnh3cCJKnu"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/choose.mp3"
+type = "audio"
+title = "Action-locked Arabic female choose"
+description = "Text-to-speech audio: بختار جواب السؤال من الخيارات."
+logical_id = "c4e9a358-d744-46a3-93c0-26bbc626ac40"
+
+[[outputs]]
+id = "1-IrmeAxTcBDBQM_S2sTP"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/continue.mp3"
+type = "audio"
+title = "Action-locked Arabic female continue"
+description = "Text-to-speech audio: وبكمل للسؤال اللي بعده."
+logical_id = "d053a244-e811-43f1-b8c9-7d039f55a125"
+
+[[outputs]]
+id = "ZIMswgk4WMJOBgYd8JZNB"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/reward.mp3"
+type = "audio"
+title = "Action-locked Arabic female reward"
+description = "Text-to-speech audio: بكبس شوف احتفالي، عشان نفتح المكافأة."
+logical_id = "4c50a781-9c06-4f31-ae05-2d4480dff84f"
+
+[[outputs]]
+id = "qVch2p2Qw0y6ljygHDq-g"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/rewardResult.mp3"
+type = "audio"
+title = "Action-locked Arabic female rewardResult"
+description = "Text-to-speech audio: هاي نفس المكافأة اللي جهّزناها، ومعها رسالة التشجيع."
+logical_id = "e711936a-d214-4cf9-be56-bf285b995f0b"
+
+[[outputs]]
+id = "K3wrErYLEJJY20RJ0nbCV"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/check.mp3"
+type = "audio"
+title = "Action-locked Arabic female check"
+description = "Text-to-speech audio: هلا بكبس تأكيد الإجابة."
+logical_id = "6e4c5de4-55ca-4366-a027-3314337c9145"
+
+[[outputs]]
+id = "dOxoDWDpHIH1zbz7V8BKv"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/startPractice.mp3"
+type = "audio"
+title = "Action-locked Arabic female startPractice"
+description = "Text-to-speech audio: ببدأ محاولة تدريب جديدة."
+logical_id = "0a709f2f-7bca-44f4-aecb-3eef22fb5f23"
+
+[[outputs]]
+id = "e7TlL0sfruNF53zs5Z7IN"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/practice.mp3"
+type = "audio"
+title = "Action-locked Arabic female practice"
+description = "Text-to-speech audio: بفتح صفحة التدريب والامتحان."
+logical_id = "d56a2a17-328c-46d2-abac-31046db21786"
+
+[[outputs]]
+id = "LZqNq0QLPanNnGfRLNgTV"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/practiceMode.mp3"
+type = "audio"
+title = "Action-locked Arabic female practiceMode"
+description = "Text-to-speech audio: بختار وضع التدريب."
+logical_id = "2147419c-4522-4cf8-97a4-40762d2d807d"
+
+[[outputs]]
+id = "-fMtX7eAU8fTlbyC4TlhY"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/placePiece.mp3"
+type = "audio"
+title = "Action-locked Arabic female placePiece"
+description = "Text-to-speech audio: بحط أول قطعة في المعادلة."
+logical_id = "9bd521ec-8ab7-489a-95dc-95b2441e4220"
+
+[[outputs]]
+id = "Nes-tFF9Xu8E31w1uPMr5"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/undo.mp3"
+type = "audio"
+title = "Action-locked Arabic female undo"
+description = "Text-to-speech audio: وبجرّب زر التراجع عن آخر قطعة."
+logical_id = "134e722a-85fa-43f7-a9b4-d1104b705083"
+
+[[outputs]]
+id = "O3L5dLhqcahOEwUo9Qd3M"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/count.mp3"
+type = "audio"
+title = "Action-locked Arabic female count"
+description = "Text-to-speech audio: بعدّ التفاحات بالكبس على كل واحدة مرة."
+logical_id = "fbbb5230-1683-4221-bfaa-06fa62a405b3"
+
+[[outputs]]
+id = "dk3QH62EJH2L-uT3ZXcfx"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/equation.mp3"
+type = "audio"
+title = "Action-locked Arabic female equation"
+description = "Text-to-speech audio: هلا بركّب المعادلة قطعة قطعة: اثنين زائد اثنين يساوي أربعة."
+logical_id = "04f1e186-a218-4593-bae9-29e93c9e9e8a"
+
+[[outputs]]
+id = "xLJT9K_MzCuWLFxMep_96"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/match.mp3"
+type = "audio"
+title = "Action-locked Arabic female match"
+description = "Text-to-speech audio: بطابق كل عملية جمع مع ناتجها؛ عملية من اليسار، وجواب من اليمين."
+logical_id = "248b2076-4597-4679-8f2b-23cb522e3d79"
+
+[[outputs]]
+id = "40d-V-2t2_P0SJR9uefi2"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/examMode.mp3"
+type = "audio"
+title = "Action-locked Arabic female examMode"
+description = "Text-to-speech audio: ببدّل لوضع الامتحان."
+logical_id = "279ea34d-fc64-42b9-bdd0-bf6636ee09bb"
+
+[[outputs]]
+id = "WDVptyE8uwT7AH2qlhJTZ"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/practiceDone.mp3"
+type = "audio"
+title = "Action-locked Arabic female practiceDone"
+description = "Text-to-speech audio: هيك خلص التدريب، وهاي نتيجة المحاولة."
+logical_id = "e1ec7187-2c1e-4eaf-99d7-57fe5f009fa3"
+
+[[outputs]]
+id = "6_Ztacrg0TsmhVcXETZMS"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/order.mp3"
+type = "audio"
+title = "Action-locked Arabic female order"
+description = "Text-to-speech audio: برتب الأرقام من الأصغر للأكبر: واحد، اثنين، ثلاثة."
+logical_id = "73a37aa6-ad65-42dc-9b1d-cbc3c4c2718c"
+
+[[outputs]]
+id = "SCL3maGzOz-69frrGKOLI"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/startExam.mp3"
+type = "audio"
+title = "Action-locked Arabic female startExam"
+description = "Text-to-speech audio: ببدأ مغامرة الامتحان."
+logical_id = "49f1f897-3c55-460e-bb1c-807103de841c"
+
+[[outputs]]
+id = "NNpDcObZ9hCIv51eKtZTP"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/resumeExam.mp3"
+type = "audio"
+title = "Action-locked Arabic female resumeExam"
+description = "Text-to-speech audio: بكبس متابعة المغامرة، وبكمل من نفس مكاني."
+logical_id = "987c68d2-d8a5-4355-89f3-7618fc7dd001"
+
+[[outputs]]
+id = "0FAm7BOgxhCrkLe5_fpjz"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/examDone.mp3"
+type = "audio"
+title = "Action-locked Arabic female examDone"
+description = "Text-to-speech audio: وصلنا للكنز، وهاي نتيجة الامتحان."
+logical_id = "112cd031-8523-425d-9721-61dc63fa8831"
+
+[[outputs]]
+id = "GS7Knh6acCTtR82ueCfQl"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/progress.mp3"
+type = "audio"
+title = "Action-locked Arabic female progress"
+description = "Text-to-speech audio: بفتح تبويب تقدّم الطفل."
+logical_id = "fc7372f0-5a44-4522-89e0-ea75a87c15c4"
+
+[[outputs]]
+id = "pFiGi2HV6B9L-uHV2wc4n"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/insights.mp3"
+type = "audio"
+title = "Action-locked Arabic female insights"
+description = "Text-to-speech audio: وبنتقل لتبويب التحليلات."
+logical_id = "c7c224f4-8278-4cd0-a7f7-7034fd9e1271"
+
+[[outputs]]
+id = "cIjoPkUCQx7kOZqqM3GXT"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/insightDetails.mp3"
+type = "audio"
+title = "Action-locked Arabic female insightDetails"
+description = "Text-to-speech audio: هون بنشوف نقاط القوة والمفاهيم اللي بدها تدريب، بناءً على الإجابات المحفوظة، مش توقعات."
+logical_id = "90bf8989-ec29-47dc-bdda-9431abd2025a"
+
+[[outputs]]
+id = "lUF_x5rbsHPzz_t0iaoXg"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/reload.mp3"
+type = "audio"
+title = "Action-locked Arabic female reload"
+description = "Text-to-speech audio: هلا بعيد تحميل الصفحة عشان أجرّب الحفظ على نفس الجهاز."
+logical_id = "739e62fc-a646-44f1-a558-b81286743a47"
+
+[[outputs]]
+id = "NdoU6AzPqdU0ScnRYMeQx"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/profile.mp3"
+type = "audio"
+title = "Action-locked Arabic female profile"
+description = "Text-to-speech audio: بفتح ملف الطفل من صورة الحساب."
+logical_id = "53bededf-a48a-4e29-bcbd-4c770686dc8c"
+
+[[outputs]]
+id = "RZNfbMJxPNnFht-ZRqf_4"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/deviceScope.mp3"
+type = "audio"
+title = "Action-locked Arabic female deviceScope"
+description = "Text-to-speech audio: التقدّم ضل موجود. الحفظ مرتبط بملف هالجهاز؛ ما في حالياً مزامنة بين أجهزة مختلفة."
+logical_id = "c1cdc390-e648-40b8-a27a-417f73e6e28c"
+
+[[outputs]]
+id = "HUKFz0ebfLjWm5Obsn_wE"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/shutter.mp3"
+type = "audio"
+title = "Action-locked Arabic female shutter"
+description = "Text-to-speech audio: بكبس زر التقاط الصورة."
+logical_id = "074c71d6-ac4e-410a-b8c8-9c408481ef40"
+
+[[outputs]]
+id = "2ZF0DZScnYbrp6cGNYzp4"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/scan.mp3"
+type = "audio"
+title = "Action-locked Arabic female scan"
+description = "Text-to-speech audio: بختار تصوير الواجب."
+logical_id = "b6ba6740-d59b-459c-95ca-bb7f2027f0f1"
+
+[[outputs]]
+id = "XRC8E0og9lZRaMZY1JaTN"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/camera.mp3"
+type = "audio"
+title = "Action-locked Arabic female camera"
+description = "Text-to-speech audio: بفتح كاميرا اختبار افتراضية. هاي تجربة تصوير، مش ورقة واجب حقيقية."
+logical_id = "9404bc63-f7f0-429b-bccb-93cc0822dd98"
+
+[[outputs]]
+id = "htLtKimJ6DWXSNeNeGu8K"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/analyze.mp3"
+type = "audio"
+title = "Action-locked Arabic female analyze"
+description = "Text-to-speech audio: وبكبس تحليل الصفحة."
+logical_id = "48be863e-9005-4eab-a36c-8cf688bef54d"
+
+[[outputs]]
+id = "g3Pe3ST8RSGT57kLSYoDZ"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/unavailable.mp3"
+type = "audio"
+title = "Action-locked Arabic female unavailable"
+description = "Text-to-speech audio: هاي الرسالة واضحة: قراءة الأسئلة من الصورة لسه مش موصولة. ما تم استخراج أسئلة. البديل الجاهز هو اختيار صفحة الكتاب."
+logical_id = "aa8c6f61-0281-431b-a282-c65e86b0e518"
+
+[[outputs]]
+id = "9asveTCJ9_HnLaLNJ1PHW"
+uri = "file://generated-artifacts/little-sprout-sync-v2/audio/closing.mp3"
+type = "audio"
+title = "Action-locked Arabic female closing"
+description = "Text-to-speech audio: هيك جرّبنا القصة والأنشطة، وكمّلنا واجب وتدريب وامتحان، وشفنا المكافآت ومتابعة الأهل. هاي جولة استخدام فعلية، مش فحص لكل حالة ممكنة. ووضّحت كمان شو الجاهز، وشو لسه مش موصول."
+logical_id = "bf2de42c-7695-4f54-8402-011b88339908"
+
+[[outputs]]
+id = "2-q9djZ35aJEpnJMG6U9h"
+uri = "file://generated-artifacts/little-sprout-sync-v2/little-sprout-arabic-female-synced-hala-v2.mp4"
+type = "video"
+title = "ديمو Little Sprout — النسخة المعدّلة مع المقدّمة والمزامنة"
+description = "شرح بصوت أنثوي بالعربي، مع مقدّمة عن المشروع وتوقيت جديد للشرح والكبسات، واستخدام «هلا». المدة ٩:٢٧، ملف MP4."
+logical_id = "01c838fc-d909-4bb1-bb8d-302ff81567f2"
+content_hash = "sha256:ca5a0f578b8153b61e2def6af7e4bafa115fe2db84aa9f907ac511fcbabe9d9e"
+size = 15978085
+mtime_ms = 1793053114952
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:cac56a7d-f81b-4246-b85e-78f4872a4114/01c838fc-d909-4bb1-bb8d-302ff81567f2/ea496161-980e-4a51-bd14-f4577a4a1c0d"
+storage_version_token = "1793053577748982"
+content_type = "video/mp4"

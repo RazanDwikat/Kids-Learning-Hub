@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 test('invalid answers do not write; correction, normalization and retry are safe', async () => {
   let token;
   const call = async (path, method = 'GET', body) => {
-    const r = await fetch(`${process.env.TEST_API_URL || "http://127.0.0.1:3000/api"}${path}`, { method, headers: {
+    const r = await fetch(`http://localhost:80/api${path}`, { method, headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     }, ...(body ? { body: JSON.stringify(body) } : {}) });

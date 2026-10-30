@@ -22,7 +22,6 @@
       }
     },
     "web": {
-      "output": "single",
       "favicon": "./assets/images/sprout-icon.png"
     },
     "plugins": [
