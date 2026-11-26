@@ -6,19 +6,7 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
-
-import { playerBridge } from './playerBridge';
-
-declare global {
-  interface Window {
-    __replitVideoPlayerMounted?: boolean;
-    __replitVideoTotalDurationMs?: number;
-    startRecording?: () => Promise<void>;
-    stopRecording?: () => void;
-  }
-}
 
 export interface SceneDurations {
   [key: string]: number;
@@ -54,49 +42,13 @@ export function useVideoPlayer(
   const totalScenes = sceneKeys.length;
   const durationsArray = useRef(Object.values(durations)).current;
 
-  const bridgeState = useSyncExternalStore(
-    playerBridge.subscribe,
-    playerBridge.getState,
-    playerBridge.getState,
-  );
-  const paused = pausedOption || bridgeState.paused;
-
-  // The preview control bar jumps to a scene by remounting the player with a
-  // new start index. Nothing mutates the bridge in the export path, so
-  // exports always start at scene 0.
-  const [currentScene, setCurrentScene] = useState(() => {
-    const { startIndex } = playerBridge.getState();
-    return startIndex > 0 && startIndex < sceneKeys.length ? startIndex : 0;
-  });
+  const paused = pausedOption;
+  const [currentScene, setCurrentScene] = useState(0);
   const [hasEnded, setHasEnded] = useState(false);
   // Time left in the current scene, carried across pause/resume cycles
   const remainingMsRef = useRef<number | null>(null);
 
-  // Start recording on mount
-  useEffect(() => {
-    window.__replitVideoPlayerMounted = true;
-    // Declares the intended video length to the export renderer so a broken
-    // stop path cannot record past the end of the last scene.
-    window.__replitVideoTotalDurationMs = durationsArray.reduce(
-      (total, duration) => total + duration,
-      0,
-    );
-    window.startRecording?.();
-
-    return () => {
-      window.__replitVideoPlayerMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    playerBridge.registerPlayback({ sceneKeys, durationsMs: durationsArray });
-  }, [sceneKeys, durationsArray]);
-
-  useEffect(() => {
-    playerBridge.publishSceneIndex(currentScene);
-  }, [currentScene]);
-
-  // Scene advancement -- loops independently of recording
+  // Advance through the supplied scenes and optionally loop the sequence.
   useEffect(() => {
     if (paused || (hasEnded && !loop)) return;
 
@@ -107,17 +59,9 @@ export function useVideoPlayer(
 
     const timer = setTimeout(() => {
       fired = true;
-      // Preview scene-lock: replay this scene via a control-wrapper remount
-      // instead of advancing. Never true in the export path, where nothing
-      // mutates the bridge.
-      if (playerBridge.getState().locked) {
-        playerBridge.bumpLoopEpoch();
-        return;
-      }
-      // Last scene just finished playing
+      // Last scene just finished playing.
       if (currentScene >= totalScenes - 1) {
         if (!hasEnded) {
-          window.stopRecording?.();
           setHasEnded(true);
           onVideoEnd?.();
         }
@@ -153,49 +97,6 @@ export function useVideoPlayer(
     currentSceneKey: sceneKeys[currentScene],
     hasEnded,
   };
-}
-
-export interface VideoAudioState {
-  muted: boolean;
-  /** Mirrors the scene clock so the audio element can pause in step with it. */
-  paused: boolean;
-}
-
-/**
- * Playback state for a background audio layer. Registering makes the
- * workspace control bar show its mute button; the export path never mutes or
- * pauses because the bar (the only writer) is absent there.
- */
-export function useVideoAudio(): VideoAudioState {
-  const bridgeState = useSyncExternalStore(
-    playerBridge.subscribe,
-    playerBridge.getState,
-    playerBridge.getState,
-  );
-
-  useEffect(() => {
-    playerBridge.registerAudio();
-  }, []);
-
-  return {
-    muted: bridgeState.audioMuted ?? false,
-    paused: bridgeState.paused,
-  };
-}
-
-/**
- * Marks the scaffold's placeholder scene. The playback registered while it
- * is mounted is published to the workspace as "no scenes", so the control
- * bar stays hidden until real scenes replace the placeholder. Only
- * ReplitLoadingScene calls this.
- */
-export function useVideoPlaceholder() {
-  useEffect(() => {
-    playerBridge.setPlaceholderMounted(true);
-    return () => {
-      playerBridge.setPlaceholderMounted(false);
-    };
-  }, []);
 }
 
 export function useSceneTimer(

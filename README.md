@@ -13,7 +13,7 @@ PostgreSQL.
 - [Project structure](#project-structure)
 - [How the system works](#how-the-system-works)
 - [Requirements](#requirements)
-- [Run on Replit](#run-on-replit)
+- [Local development](#local-development)
 - [Install and run locally](#install-and-run-locally)
 - [Database setup](#database-setup)
 - [Commands](#commands)
@@ -116,69 +116,66 @@ Expo app ── generated React Query client ── Express API ── PostgreSQ
 - **Initial content:** the API seeds the addition curriculum and sample
   activities on first use. The textbook pages are kept in a code catalog.
 
-The Replit artifact metadata defines an `API Server` service on port `8080`
-and an `expo` service on port `18284`. The Expo web preview uses the Replit
-preview gateway's `/api` route. Native builds use the Replit-provided API
-domain variables. Both services and a configured PostgreSQL database are
-needed for the complete application.
+Both the app and API are needed for the complete learning experience. The app
+uses `EXPO_PUBLIC_API_URL` as the API origin when one is provided. Web previews
+can use a same-origin `/api` route; native devices need an API address they can
+reach over the network.
 
 ## Requirements
 
-- Node.js and pnpm. The Replit configuration selects the Node.js 20 module;
-  use the runtime provided by the Replit project when running there.
+- Node.js 20 or later and pnpm 9 or later.
 - A PostgreSQL database.
 - A `DATABASE_URL` environment variable available to the API and database
   package.
 
-Do not commit database credentials. In Replit, store `DATABASE_URL` using the
-project's Secrets / environment-variable settings. The API cannot start
-without it. The imported snapshot does not include a database URL, so database
-provisioning is a prerequisite before the full app can run.
+Do not commit database credentials. Set `DATABASE_URL` in the environment
+where the API runs. The API cannot start without it. A PostgreSQL database
+must be provisioned before the full app can run.
 
-## Run on Replit
+## Local development
 
-Start both project services:
-
-1. Start **API Server** (`artifacts/api-server`).
-2. Start **Little Sprout / expo** (`artifacts/little-sprout`).
-3. Open the Little Sprout app preview.
-
-The service definitions provide the development commands and ports. The API
-uses the PostgreSQL database configured through `DATABASE_URL`; the app's
-Replit development command supplies the Expo domain configuration. If the app
-shows a connection or database error, check that the database is provisioned,
-`DATABASE_URL` is set, and the API service is running.
-
-The imported root `.replit` file does not define workflow commands. If Replit
-does not offer these artifact services as startable previews, configure run
-steps for the API and Expo commands below before expecting the Preview button
-to launch the full app.
-
-## Install and run locally
-
-Run commands from the repository root:
+Install dependencies from the repository root:
 
 ```sh
 pnpm install
 ```
 
-Set `DATABASE_URL` to a development PostgreSQL database before starting the
-API or applying the schema. Start the API and app in separate terminals:
+Set `DATABASE_URL` to a development PostgreSQL database, apply the schema as
+described below, then start the API in one terminal:
 
 ```sh
-pnpm --filter @workspace/api-server run dev
+DATABASE_URL="$DATABASE_URL" PORT=8080 pnpm --filter @workspace/api-server run dev
 ```
+
+The API health check is available at `http://localhost:8080/api/healthz`.
+Start the Expo app in a second terminal:
 
 ```sh
-pnpm --filter @workspace/little-sprout run dev
+EXPO_PUBLIC_API_URL=http://localhost:8080 PORT=8081 pnpm --filter @workspace/little-sprout run dev
 ```
 
-The API server requires a `PORT` value. Replit supplies it through the
-artifact service configuration. The Expo development command also relies on
-Replit's Expo/domain environment, and the app expects the `/api` route to reach
-the API. Running outside Replit therefore requires equivalent port and
-same-origin API routing/domain configuration; the two commands alone do not
-configure a local proxy.
+For a physical phone, replace `localhost` in `EXPO_PUBLIC_API_URL` with an API
+address reachable from that phone. Use HTTPS for a deployed API. When the
+variable is omitted, web uses the current origin and native platforms display
+a connection-configuration error.
+
+To run the demo video or prototype sandbox, start either package separately:
+
+```sh
+PORT=5173 pnpm --filter @workspace/little-sprout-demo run dev
+PORT=5174 pnpm --filter @workspace/mockup-sandbox run dev
+```
+
+The web app can be built and served as a static export. Set the public API
+origin at build time so it is embedded in the web bundle:
+
+```sh
+EXPO_PUBLIC_API_URL=https://<api-host> pnpm --filter @workspace/little-sprout run build
+pnpm --filter @workspace/little-sprout run serve
+```
+
+Store publishing and native app binaries are not configured in this
+repository.
 
 ## Database setup
 
@@ -209,7 +206,7 @@ the API can persist data.
 | `pnpm --filter @workspace/api-server run build` | Build the API bundle. |
 | `pnpm --filter @workspace/api-server run start` | Start the built API; requires `PORT` and `DATABASE_URL`. |
 | `pnpm --filter @workspace/api-server test` | Run API HTTP integration tests against the configured API and database. |
-| `pnpm --filter @workspace/little-sprout run dev` | Start the Expo development server using Replit's environment. |
+| `pnpm --filter @workspace/little-sprout run dev` | Start the Expo development server. Set `EXPO_PUBLIC_API_URL` for native or cross-origin access. |
 | `pnpm --filter @workspace/little-sprout run typecheck` | Type-check the Expo app. |
 | `pnpm --filter @workspace/little-sprout run build` | Build the app's web output. |
 | `pnpm --filter @workspace/little-sprout run serve` | Serve the built app. |
@@ -277,8 +274,7 @@ The full request and response contract is in `lib/api-spec/openapi.yaml`.
 
 The API test command sends HTTP requests to the running API and checks
 persistence, session isolation, answer recovery, activity adventures, and
-reward behavior. It requires a running API and a development database; see the
-API tests for their expected local/preview routing.
+reward behavior. It requires a running API and a development database.
 
 Additional app logic tests cover activity-answer normalization and recovery,
 story-review isolation, and story audio behavior. Those test files are present
@@ -312,5 +308,27 @@ dependencies.
   create activities.
 - Profiles are anonymous and device-bound. There is no login, parent account,
   cross-device sync, or lost-device recovery.
-- The Replit development app expects Replit's routing/domain environment. A
-  local environment needs equivalent routing in addition to PostgreSQL.
+
+## Product requirements
+
+- Preserve the existing mobile experience and five-scene Addition lesson.
+- Keep lesson content full-screen and finite; do not turn it into an infinite
+  feed or a card-based lesson.
+- Keep the child-facing experience warm, visual, playful, and easy to use by
+  touch. Keep family feedback calm and informative.
+- Use supportive feedback and visual explanations for mistakes; do not show
+  blunt “Wrong” messages.
+- Keep exams retry-friendly. Only correct answers unlock the next stop, and a
+  completed adventure may grant a parent-configured reward.
+- Keep future curriculum topics clearly marked as unavailable until they are
+  implemented.
+- For homework, use the printed textbook exercise pages or the camera intake
+  flow. Camera and recognition states must report honestly; automated
+  recognition is not connected yet. AI tutoring is out of scope.
+- Keep the child profile anonymous and device-bound for this phase. Do not add
+  sign-in or collect child personal details. Clearing local app storage loses
+  access to that device profile; cross-device recovery requires future account
+  work.
+- The mobile Addition lesson uses animated scenes synchronized with bundled
+  English narration and captions. Preserve its playback controls and saved
+  progress.

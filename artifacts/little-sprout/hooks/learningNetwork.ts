@@ -5,20 +5,36 @@ const REQUEST_TIMEOUT_MS = 12000;
 const NETWORK_MESSAGE = 'Could not connect to your garden. Check your connection and tap Retry.';
 const TIMEOUT_MESSAGE = 'The connection took too long. Tap Retry to try again.';
 
-// Native bundles need an absolute API origin. Web uses its own origin: the
-// preview gateway already routes /api to Express, without a cross-site fetch.
-const domain = process.env.EXPO_PUBLIC_DOMAIN;
-const validDomain = typeof domain === 'string' &&
-  domain.length <= 253 &&
-  (domain === 'localhost' || domain.split('.').length >= 2) &&
-  domain.split('.').every(label => /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(label));
+// Set this to the API origin (without the /api path). Web can also use its
+// current origin when a server or reverse proxy exposes the API at /api.
+const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+let apiOrigin: string | null = null;
 
-export const apiConfigError = Platform.OS === 'web' || validDomain
-  ? null
-  : 'The garden connection is not configured. Please reopen the preview or contact support.';
+if (configuredApiUrl) {
+  try {
+    const url = new URL(configuredApiUrl);
+    if (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      url.pathname === '/' &&
+      !url.search &&
+      !url.hash &&
+      !url.username &&
+      !url.password
+    ) {
+      apiOrigin = url.origin;
+    }
+  } catch {
+    // Report a clear configuration error below rather than failing a request.
+  }
+}
+
+export const apiConfigError = (configuredApiUrl && !apiOrigin) ||
+  (Platform.OS !== 'web' && !apiOrigin)
+  ? 'Set EXPO_PUBLIC_API_URL to the API origin, such as http://localhost:8080.'
+  : null;
 
 export function configureLearningApi() {
-  setBaseUrl(Platform.OS === 'web' ? null : validDomain ? `https://${domain}` : null);
+  setBaseUrl(apiOrigin);
 }
 
 export function isNetworkError(error: unknown) {

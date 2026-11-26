@@ -9,7 +9,7 @@ export const VIDEO_ASPECT_RATIO:VideoAspectRatio='16:9';
 const offsets:Record<string,number>={};let cursor=0;for(const c of RECORDED_CHAPTERS){offsets[c.key]=cursor;cursor+=c.duration/1000;}
 const baseKey=(key:string)=>key.replace(/_r[12]$/,'');
 type Props={durations?:Record<string,number>;loop?:boolean;paused?:boolean;muted?:boolean;onSceneChange?:(key:string)=>void};
-function RecordingClock({durations,loop,paused,onChange}:{durations:Record<string,number>;loop:boolean;paused:boolean;onChange:(key:string)=>void}){
+function SceneClock({durations,loop,paused,onChange}:{durations:Record<string,number>;loop:boolean;paused:boolean;onChange:(key:string)=>void}){
  const {currentSceneKey}=useVideoPlayer({durations,loop,paused});
  const callback=useRef(onChange);callback.current=onChange;
  useEffect(()=>{callback.current(currentSceneKey)},[currentSceneKey]);
@@ -40,6 +40,6 @@ export default function VideoTemplate({durations=SCENE_DURATIONS,loop=true,pause
  return <VideoCanvas aspectRatio={VIDEO_ASPECT_RATIO} style={{background:'#fff9ef'}}>
   <video ref={video} src={`${import.meta.env.BASE_URL}female-walkthrough-synced-hala-v2.webm?audio=sample-locked`} poster={`${import.meta.env.BASE_URL}female-walkthrough-synced-hala-v2.jpg`} preload="auto" playsInline autoPlay={!paused} loop={loop} muted={muted} onLoadedMetadata={begin} onError={()=>setError(true)} style={{width:'100%',height:'100%',display:'block',objectFit:'contain'}}/>
   {!playing&&<div style={{position:'absolute',inset:0,display:'grid',placeContent:'center',background:'#fff9efe8',textAlign:'center',color:'#397567',fontFamily:'DM Sans, sans-serif'}}><strong style={{fontSize:'2.6cqw'}}>little sprout.</strong><p dir="rtl" style={{fontSize:'1.4cqw'}}>{error?'تعذّر تحميل العرض. أعد تحميل الصفحة للمحاولة مرة ثانية.':'جارٍ تجهيز الجولة بالصوت والصورة…'}</p></div>}
-  {playing&&<RecordingClock durations={durations} loop={loop} paused={paused} onChange={sceneChanged}/>}
+  {playing&&<SceneClock durations={durations} loop={loop} paused={paused} onChange={sceneChanged}/>}
  </VideoCanvas>;
 }

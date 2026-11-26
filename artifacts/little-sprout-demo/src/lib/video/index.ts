@@ -3,18 +3,9 @@
 export {
   useVideoPlayer,
   useSceneTimer,
-  useVideoAudio,
-  useVideoPlaceholder,
   VideoPausedContext,
 } from './hooks';
-export type {
-  SceneDurations,
-  UseVideoPlayerOptions,
-  UseVideoPlayerReturn,
-  VideoAudioState,
-} from './hooks';
-
-export { WorkspaceControlledVideo } from './controls';
+export type { SceneDurations, UseVideoPlayerOptions, UseVideoPlayerReturn } from './hooks';
 
 export {
   MediaFrame,
